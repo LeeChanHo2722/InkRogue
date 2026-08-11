@@ -1,0 +1,187 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &2589296992825422466
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 672971459342561209, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_Size.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 778149230554688618, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 778149230554688618, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 778149230554688618, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 778149230554688618, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 778149230554688618, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 778149230554688618, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 778149230554688618, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 778149230554688618, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 778149230554688618, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 778149230554688618, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1919778883653219187, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: maxHealth
+      value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 2415101446515619710, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_Name
+      value: Enemy_Bomber_New
+      objectReference: {fileID: 0}
+    - target: {fileID: 8656514922943117820, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_Color.b
+      value: 0.028307091
+      objectReference: {fileID: 0}
+    - target: {fileID: 8656514922943117820, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_Color.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8656514922943117820, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      propertyPath: m_Color.r
+      value: 0.1981132
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2415101446515619710, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1548901691594688474}
+    - targetCorrespondingSourceObject: {fileID: 2415101446515619710, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 87146753800519266}
+    - targetCorrespondingSourceObject: {fileID: 2415101446515619710, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5270572795828521414}
+  m_SourcePrefab: {fileID: 100100000, guid: c42a9d4a3b674e3419e92cf99d8c8848, type: 3}
+--- !u!1 &174283713666926076 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2415101446515619710, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+    type: 3}
+  m_PrefabInstance: {fileID: 2589296992825422466}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1548901691594688474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 174283713666926076}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63a535f07e088ee4684584594341c8f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyBomberAttack
+  bombPrefab: {fileID: 6809148785148544520, guid: a5621d5871a892348ab208a687ee613a,
+    type: 3}
+  firePoint: {fileID: 0}
+  movement: {fileID: 87146753800519266}
+  telegraph: {fileID: 5270572795828521414}
+  attackRange: 6
+  attackCooldown: 2.4
+  windupDuration: 0.85
+  aimLockDuration: 0.25
+  windupMoveMultiplier: 0.35
+  flightDuration: 0.55
+  damage: 2
+  damageRadius: 1.35
+  inkRadius: 2.15
+  inkSplatCount: 30
+--- !u!114 &87146753800519266
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 174283713666926076}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb7560d95aaf5b44387e4e8830df2c35, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyBomberMovement
+  moveSpeed: 2.1
+  preferredDistance: 4
+  distanceTolerance: 0.65
+  strafeWeight: 0.75
+  strafeSwitchInterval: 1.2
+  inkSampleRadius: 0.22
+  playerInkSlowMultiplier: 0.5
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  obstacleCheckDistance: 0.9
+  bodyRadius: 0.32
+--- !u!114 &5270572795828521414
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 174283713666926076}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd9dbdecbef2d3d4996cf4d94af814fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyBomberTelegraph
+  segments: 48
+  lineWidth: 0.06
+  countdownStartScale: 1.7
+  sortingOrderOffset: 4
+  referenceRenderer: {fileID: 6614971534978894718}
+--- !u!212 &6614971534978894718 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 8656514922943117820, guid: c42a9d4a3b674e3419e92cf99d8c8848,
+    type: 3}
+  m_PrefabInstance: {fileID: 2589296992825422466}
+  m_PrefabAsset: {fileID: 0}

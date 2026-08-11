@@ -1,0 +1,34 @@
+# Unity generated folders
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# Build outputs
+/[Bb]uild/
+/[Bb]uilds/
+
+# Visual Studio / IDE generated files
+.vs/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.opendb
+*.VC.db
+
+# Unity crash / temporary files
+sysinfo.txt
+mono_crash.*
+
+# OS / misc
+.DS_Store
+Thumbs.db
+
+# Old upgrade report
+UpgradeLog.htm
