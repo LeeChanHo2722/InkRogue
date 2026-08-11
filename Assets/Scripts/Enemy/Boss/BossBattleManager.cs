@@ -598,15 +598,6 @@ public class BossBattleManager : MonoBehaviour
                 enemy
             );
         }
-
-
-        Debug.Log(
-            "BOSS ADDS SPAWN"
-            + " | Shooter: "
-            + shooterCountPerWave
-            + " | Bomber: "
-            + bomberCountPerWave
-        );
     }
 
 
