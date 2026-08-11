@@ -31,4 +31,4 @@ mono_crash.*
 Thumbs.db
 
 # Old upgrade report
-UpgradeLog.htm
+UpgradeLog*.htm
