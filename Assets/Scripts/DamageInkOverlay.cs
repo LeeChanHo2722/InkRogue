@@ -106,7 +106,7 @@ public class DamageInkOverlay : MonoBehaviour
         if (playerShield == null)
         {
             playerShield =
-                FindFirstObjectByType<PlayerShield>();
+                FindAnyObjectByType<PlayerShield>();
         }
 
 
@@ -139,7 +139,7 @@ public class DamageInkOverlay : MonoBehaviour
         if (playerShield == null)
         {
             playerShield =
-                FindFirstObjectByType<PlayerShield>();
+                FindAnyObjectByType<PlayerShield>();
         }
 
 

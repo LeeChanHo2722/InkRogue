@@ -607,8 +607,7 @@ public class BossArenaTransitionManager : MonoBehaviour
     {
         FloorCleanupObject[] cleanupObjects =
             FindObjectsByType<FloorCleanupObject>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None
+                FindObjectsInactive.Exclude
             );
 
 

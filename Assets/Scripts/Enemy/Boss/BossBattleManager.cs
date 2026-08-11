@@ -663,10 +663,8 @@ public class BossBattleManager : MonoBehaviour
     private void ClearCombatObjects()
     {
         FloorCleanupObject[] cleanupObjects =
-            FindObjectsByType<
-                FloorCleanupObject
-            >(
-                FindObjectsSortMode.None
+            FindObjectsByType<FloorCleanupObject>(
+                FindObjectsInactive.Exclude
             );
 
 

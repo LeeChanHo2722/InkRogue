@@ -751,10 +751,8 @@ public class FloorTransitionManager : MonoBehaviour
     private void ClearFloorCombatObjects()
     {
         FloorCleanupObject[] cleanupObjects =
-            FindObjectsByType<
-                FloorCleanupObject
-            >(
-                FindObjectsSortMode.None
+            FindObjectsByType<FloorCleanupObject>(
+                FindObjectsInactive.Exclude
             );
 
 
