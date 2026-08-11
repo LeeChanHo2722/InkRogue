@@ -361,20 +361,11 @@ public class FloorManager : MonoBehaviour
         }
 
 
-        Debug.Log(
-            "================================"
-        );
-
 
         Debug.Log(
             "FLOOR "
             + currentFloor
             + " START"
-        );
-
-
-        Debug.Log(
-            "================================"
         );
 
 
@@ -445,12 +436,6 @@ public class FloorManager : MonoBehaviour
                 floorData.waves.Count
             );
         }
-
-
-        Debug.Log(
-            "------------------------------"
-        );
-
 
         Debug.Log(
             "FLOOR "
@@ -533,16 +518,6 @@ public class FloorManager : MonoBehaviour
                 )
                 % spawnPoints.Length;
         }
-
-
-        Debug.Log(
-            "Wave Enemies: "
-            + waveSpawnCounts[
-                currentWaveIndex
-            ]
-            + " | Total Alive: "
-            + remainingEnemies
-        );
 
 
         CheckFloorClear();
@@ -718,14 +693,6 @@ public class FloorManager : MonoBehaviour
             ]++;
         }
 
-
-        Debug.Log(
-            "Enemy Defeated"
-            + " | From Wave: "
-            + (sourceWaveIndex + 1)
-            + " | Total Alive: "
-            + remainingEnemies
-        );
 
 
         CheckFloorClear();
@@ -930,11 +897,6 @@ public class FloorManager : MonoBehaviour
     {
         currentFloor++;
 
-
-        Debug.Log(
-            "Preparing FLOOR "
-            + currentFloor
-        );
     }
 
 

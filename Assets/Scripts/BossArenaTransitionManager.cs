@@ -408,14 +408,6 @@ public class BossArenaTransitionManager : MonoBehaviour
                 .position;
 
 
-        Debug.Log(
-            "PLAYER TELEPORT"
-            + " | Before: "
-            + beforePosition
-            + " | Target: "
-            + targetPosition
-        );
-
 
         playerRigidbody.position =
             new Vector2(
@@ -439,15 +431,6 @@ public class BossArenaTransitionManager : MonoBehaviour
 
 
         Physics2D.SyncTransforms();
-
-
-        Debug.Log(
-            "PLAYER TELEPORT COMPLETE"
-            + " | After: "
-            + playerRigidbody
-                .transform
-                .position
-        );
     }
 
 
@@ -607,8 +590,7 @@ public class BossArenaTransitionManager : MonoBehaviour
     {
         FloorCleanupObject[] cleanupObjects =
             FindObjectsByType<FloorCleanupObject>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None
+                FindObjectsInactive.Exclude
             );
 
 

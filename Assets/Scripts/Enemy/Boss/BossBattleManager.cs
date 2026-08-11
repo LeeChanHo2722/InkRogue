@@ -598,15 +598,6 @@ public class BossBattleManager : MonoBehaviour
                 enemy
             );
         }
-
-
-        Debug.Log(
-            "BOSS ADDS SPAWN"
-            + " | Shooter: "
-            + shooterCountPerWave
-            + " | Bomber: "
-            + bomberCountPerWave
-        );
     }
 
 
@@ -663,10 +654,8 @@ public class BossBattleManager : MonoBehaviour
     private void ClearCombatObjects()
     {
         FloorCleanupObject[] cleanupObjects =
-            FindObjectsByType<
-                FloorCleanupObject
-            >(
-                FindObjectsSortMode.None
+            FindObjectsByType<FloorCleanupObject>(
+                FindObjectsInactive.Exclude
             );
 
 
