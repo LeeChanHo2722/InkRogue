@@ -40,6 +40,33 @@ public class PlayerFloorSpawnVisual : MonoBehaviour
 
     public float settleDuration = 0.12f;
 
+    // ==================================================
+    // Death VFX
+    // ==================================================
+
+    [Header("Death VFX")]
+
+    [Tooltip("죽는 순간 살짝 커지는 크기")]
+    public float deathPopScale = 1.18f;
+
+    [Tooltip("죽는 순간 팽창 시간")]
+    public float deathPopDuration = 0.07f;
+
+    [Tooltip("팽창 후 완전히 사라지는 시간")]
+    public float deathCollapseDuration = 0.18f;
+
+    [Tooltip("사망 시 좌우 흔들림 각도")]
+    public float deathShakeAngle = 7f;
+
+    [Tooltip("사망 Primary Ring 최종 크기")]
+    public float deathPrimaryEndRadius = 1.15f;
+
+    [Tooltip("사망 Secondary Ring 최종 크기")]
+    public float deathSecondaryEndRadius = 0.85f;
+
+    [Tooltip("두 번째 Ring이 조금 늦게 발생하는 시간")]
+    public float deathSecondaryDelay = 0.035f;
+
 
     // ==================================================
     // Ring
@@ -80,6 +107,8 @@ public class PlayerFloorSpawnVisual : MonoBehaviour
 
     private Vector3 originalScale;
 
+    private Quaternion originalRotation;
+
     private bool prepared = false;
 
 
@@ -90,6 +119,8 @@ public class PlayerFloorSpawnVisual : MonoBehaviour
     private LineRenderer secondaryRing;
 
 
+
+
     // ==================================================
     // Awake
     // ==================================================
@@ -98,6 +129,9 @@ public class PlayerFloorSpawnVisual : MonoBehaviour
     {
         originalScale =
             transform.localScale;
+
+        originalRotation =
+            transform.localRotation;
 
 
         if (referenceRenderer == null)
@@ -122,10 +156,11 @@ public class PlayerFloorSpawnVisual : MonoBehaviour
         prepared =
             true;
 
-
         transform.localScale =
             Vector3.zero;
 
+        transform.localRotation =
+            originalRotation;
 
         HideRings();
     }
@@ -393,6 +428,351 @@ public class PlayerFloorSpawnVisual : MonoBehaviour
 
         prepared =
             false;
+    }
+
+    // ==================================================
+    // Death
+    // ==================================================
+
+    public IEnumerator PlayDeath()
+    {
+        Vector2 deathPosition =
+            transform.position;
+
+
+        Color effectColor =
+            GetPlayerInkColor();
+
+
+        prepared =
+            false;
+
+
+        transform.localRotation =
+            originalRotation;
+
+
+        // ==========================================
+        // Primary Ring 시작
+        // ==========================================
+
+        if (primaryRing != null)
+        {
+            primaryRing.enabled =
+                true;
+        }
+
+
+        // Secondary는 조금 늦게 시작
+        if (secondaryRing != null)
+        {
+            secondaryRing.enabled =
+                false;
+        }
+
+
+        // ==========================================
+        // 1. 순간 팽창 + 떨림
+        //
+        // 1.0 → deathPopScale
+        // ==========================================
+
+        float timer =
+            0f;
+
+
+        float safePopDuration =
+            Mathf.Max(
+                deathPopDuration,
+                0.01f
+            );
+
+
+        while (timer <
+               safePopDuration)
+        {
+            timer +=
+                Time.deltaTime;
+
+
+            float t =
+                Mathf.Clamp01(
+                    timer
+                    / safePopDuration
+                );
+
+
+            float eased =
+                EaseOutCubic(
+                    t
+                );
+
+
+            float playerScale =
+                Mathf.Lerp(
+                    1f,
+                    deathPopScale,
+                    eased
+                );
+
+
+            transform.localScale =
+                originalScale
+                * playerScale;
+
+
+            // ======================================
+            // 좌우 떨림
+            // ======================================
+
+            float shake =
+                Mathf.Sin(
+                    t
+                    * Mathf.PI
+                    * 3f
+                )
+                * deathShakeAngle;
+
+
+            transform.localRotation =
+                originalRotation
+                * Quaternion.Euler(
+                    0f,
+                    0f,
+                    shake
+                );
+
+
+            // ======================================
+            // Primary Ring 초기 폭발
+            // ======================================
+
+            float primaryRadius =
+                Mathf.Lerp(
+                    primaryStartRadius,
+                    deathPrimaryEndRadius
+                        * 0.35f,
+                    eased
+                );
+
+
+            Color primaryColor =
+                effectColor;
+
+
+            primaryColor.a =
+                1f;
+
+
+            UpdateRing(
+                primaryRing,
+                deathPosition,
+                primaryRadius,
+                primaryStartWidth,
+                primaryColor
+            );
+
+
+            yield return null;
+        }
+
+
+        // ==========================================
+        // 2. 빠른 축소 + Ring 폭발
+        //
+        // deathPopScale → 0
+        // ==========================================
+
+        timer =
+            0f;
+
+
+        float safeCollapseDuration =
+            Mathf.Max(
+                deathCollapseDuration,
+                0.01f
+            );
+
+
+        while (timer <
+               safeCollapseDuration)
+        {
+            timer +=
+                Time.deltaTime;
+
+
+            float t =
+                Mathf.Clamp01(
+                    timer
+                    / safeCollapseDuration
+                );
+
+
+            // 처음에는 버티다가
+            // 마지막에 빠르게 작아지는 느낌
+            float collapseEase =
+                t * t * t;
+
+
+            float playerScale =
+                Mathf.Lerp(
+                    deathPopScale,
+                    0f,
+                    collapseEase
+                );
+
+
+            transform.localScale =
+                originalScale
+                * playerScale;
+
+
+            // ======================================
+            // 죽으면서 빠르게 떨린 후 안정
+            // ======================================
+
+            float shake =
+                Mathf.Sin(
+                    t
+                    * Mathf.PI
+                    * 5f
+                )
+                * deathShakeAngle
+                * (1f - t);
+
+
+            transform.localRotation =
+                originalRotation
+                * Quaternion.Euler(
+                    0f,
+                    0f,
+                    shake
+                );
+
+
+            // ======================================
+            // Primary Ring
+            // ======================================
+
+            float primaryRadius =
+                Mathf.Lerp(
+                    deathPrimaryEndRadius
+                        * 0.35f,
+                    deathPrimaryEndRadius,
+                    EaseOutCubic(t)
+                );
+
+
+            float primaryWidth =
+                Mathf.Lerp(
+                    primaryStartWidth,
+                    0.01f,
+                    t
+                );
+
+
+            Color primaryColor =
+                effectColor;
+
+
+            primaryColor.a =
+                1f - t;
+
+
+            UpdateRing(
+                primaryRing,
+                deathPosition,
+                primaryRadius,
+                primaryWidth,
+                primaryColor
+            );
+
+
+            // ======================================
+            // Secondary Ring
+            // ======================================
+
+            float secondaryT =
+                Mathf.InverseLerp(
+                    deathSecondaryDelay,
+                    safeCollapseDuration,
+                    timer
+                );
+
+
+            secondaryT =
+                Mathf.Clamp01(
+                    secondaryT
+                );
+
+
+            if (secondaryRing != null &&
+                secondaryT > 0f)
+            {
+                secondaryRing.enabled =
+                    true;
+
+
+                float secondaryRadius =
+                    Mathf.Lerp(
+                        secondaryStartRadius,
+                        deathSecondaryEndRadius,
+                        EaseOutCubic(
+                            secondaryT
+                        )
+                    );
+
+
+                float secondaryWidth =
+                    Mathf.Lerp(
+                        secondaryStartWidth,
+                        0.01f,
+                        secondaryT
+                    );
+
+
+                Color secondaryColor =
+                    effectColor;
+
+
+                secondaryColor.a =
+                    (1f - secondaryT)
+                    * 0.8f;
+
+
+                UpdateRing(
+                    secondaryRing,
+                    deathPosition,
+                    secondaryRadius,
+                    secondaryWidth,
+                    secondaryColor
+                );
+            }
+
+
+            yield return null;
+        }
+
+
+        // ==========================================
+        // Player 완전히 사라짐
+        // ==========================================
+
+        transform.localScale =
+            Vector3.zero;
+
+
+        transform.localRotation =
+            originalRotation;
+
+
+        HideRings();
+
+
+        // 이후 PlaySpawn이
+        // 0 Scale에서 정상적으로 시작하게 함
+        prepared =
+            true;
     }
 
 

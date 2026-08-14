@@ -30,6 +30,7 @@ public class PlayerShield : MonoBehaviour
     public event Action ShieldHit;
     public event Action ShieldBroken;
     public event Action ShieldRestored;
+    public event Action PlayerDefeated;
     public event Action<float, float> ShieldChanged;
 
     // 신규: 공격이 들어온 위치
@@ -37,6 +38,9 @@ public class PlayerShield : MonoBehaviour
 
     private bool isEmergency = false;
     private bool isGameOver = false;
+    private bool isDefeated = false;
+
+    private float invulnerableUntil = 0f;
 
     private float emergencyTimer = 0f;
     private float emergencyGraceTimer = 0f;
@@ -157,7 +161,13 @@ public class PlayerShield : MonoBehaviour
         Vector2 hitSourcePosition)
     {
         if (damage <= 0f ||
-            isGameOver)
+            isGameOver ||
+            isDefeated)
+        {
+            return;
+        }
+
+        if (Time.unscaledTime < invulnerableUntil)
         {
             return;
         }
@@ -178,7 +188,9 @@ public class PlayerShield : MonoBehaviour
                 hitSourcePosition
             );
 
-            GameOver();
+            isDefeated = true;
+
+            PlayerDefeated?.Invoke();
 
             return;
         }
@@ -304,6 +316,49 @@ public class PlayerShield : MonoBehaviour
     // ==================================================
     // New Floor Reset
     // ==================================================
+    public void ResetAfterRespawn(
+    float invulnerabilityDuration)
+    {
+        bool wasEmergency =
+            isEmergency;
+
+        currentShield =
+            maxShield;
+
+        isEmergency =
+            false;
+
+        isDefeated =
+            false;
+
+        isGameOver =
+            false;
+
+        emergencyTimer =
+            0f;
+
+        emergencyGraceTimer =
+            0f;
+
+        lastHitTime =
+            Time.time;
+
+        invulnerableUntil =
+            Time.unscaledTime
+            + Mathf.Max(
+                0f,
+                invulnerabilityDuration
+            );
+
+        NotifyShieldChanged();
+
+        if (wasEmergency)
+        {
+            ShieldRestored?.Invoke();
+        }
+
+        UpdateUI();
+    }
 
     public void ResetForNewFloor()
     {
@@ -329,6 +384,9 @@ public class PlayerShield : MonoBehaviour
 
         isGameOver =
             false;
+
+        isDefeated = false;
+        invulnerableUntil = 0f;
 
 
         emergencyTimer =
@@ -375,7 +433,7 @@ public class PlayerShield : MonoBehaviour
         UpdateUI();
     }
 
-    private void GameOver()
+    public void TriggerGameOver()
     {
         if (isGameOver)
             return;

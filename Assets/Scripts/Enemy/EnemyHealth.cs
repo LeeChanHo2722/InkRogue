@@ -11,10 +11,25 @@ public class EnemyHealth : MonoBehaviour
     public int maxHealth = 12;
 
 
-    private int currentHealth;
+    // 실제 HP는 소수점까지 저장
+    private float currentHealth;
 
+
+    // ==================================================
+    // Compatibility
+    //
+    // 기존 코드가 CurrentHealth를 int로 사용하고
+    // 있을 가능성이 있으므로 유지.
+    // ==================================================
 
     public int CurrentHealth =>
+        Mathf.CeilToInt(
+            currentHealth
+        );
+
+
+    // 정확한 소수점 HP가 필요할 때 사용
+    public float CurrentHealthExact =>
         currentHealth;
 
 
@@ -26,7 +41,7 @@ public class EnemyHealth : MonoBehaviour
         maxHealth <= 0
             ? 0f
             : Mathf.Clamp01(
-                (float)currentHealth
+                currentHealth
                 / maxHealth
             );
 
@@ -58,30 +73,41 @@ public class EnemyHealth : MonoBehaviour
 
 
         visualFeedback =
-            GetComponent<EnemyVisualFeedback>();
+            GetComponent<
+                EnemyVisualFeedback
+            >();
 
 
-        // 길을 만드는 적만 존재.
-        // Shooter / Bomber / Sprinkler에는
-        // 없어도 문제 없음.
         inkTrail =
-            GetComponent<EnemyInkTrail>();
+            GetComponent<
+                EnemyInkTrail
+            >();
     }
 
 
     // ==================================================
     // Damage
+    //
+    // int → float
+    //
+    // 기존 int Damage 호출도
+    // 자동으로 float으로 변환되므로 그대로 작동.
     // ==================================================
 
     public void TakeDamage(
-        int damage)
+        float damage
+    )
     {
         if (isDead)
+        {
             return;
+        }
 
 
-        if (damage <= 0)
+        if (damage <= 0f)
+        {
             return;
+        }
 
 
         currentHealth -=
@@ -90,7 +116,7 @@ public class EnemyHealth : MonoBehaviour
 
         currentHealth =
             Mathf.Max(
-                0,
+                0f,
                 currentHealth
             );
 
@@ -99,7 +125,7 @@ public class EnemyHealth : MonoBehaviour
         // 아직 살아있음
         // ==========================================
 
-        if (currentHealth > 0)
+        if (currentHealth > 0f)
         {
             inkTrail?
                 .OnHitByPlayerInk();
@@ -128,13 +154,18 @@ public class EnemyHealth : MonoBehaviour
     private void Die()
     {
         if (isDead)
+        {
             return;
-
-        
+        }
 
 
         isDead =
             true;
+
+
+        currentHealth =
+            0f;
+
 
         if (GameAudioManager.Instance != null)
         {
@@ -147,12 +178,10 @@ public class EnemyHealth : MonoBehaviour
             .PlayDeath();
 
 
-        // ==========================================
-        // 자신이 어느 Wave에서 Spawn됐는지 보고
-        // ==========================================
-
         EnemyWaveMember waveMember =
-            GetComponent<EnemyWaveMember>();
+            GetComponent<
+                EnemyWaveMember
+            >();
 
 
         if (waveMember != null)

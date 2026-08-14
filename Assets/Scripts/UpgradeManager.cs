@@ -11,11 +11,16 @@ public class UpgradeManager : MonoBehaviour
 
     public GameObject upgradePanel;
 
+
     public PlayerMovement playerMovement;
 
-    public PlayerShoot playerShoot;
 
-    public FloorTransitionManager transitionManager;
+    public ShooterWeaponBehaviour
+        shooterWeaponBehaviour;
+
+
+    public FloorTransitionManager
+        transitionManager;
 
 
     // ==================================================
@@ -40,6 +45,7 @@ public class UpgradeManager : MonoBehaviour
     public UpgradeSelectionFeedback
         selectionFeedback;
 
+
     public UpgradePanelIntro
         panelIntro;
 
@@ -48,11 +54,16 @@ public class UpgradeManager : MonoBehaviour
     // Levels
     // ==================================================
 
-    private int powerLevel = 0;
+    private int powerLevel =
+        0;
 
-    private int rapidLevel = 0;
 
-    private int speedLevel = 0;
+    private int rapidLevel =
+        0;
+
+
+    private int speedLevel =
+        0;
 
 
     public int PowerLevel =>
@@ -73,6 +84,35 @@ public class UpgradeManager : MonoBehaviour
 
     private bool selectionLocked =
         false;
+
+
+    // ==================================================
+    // Awake
+    // ==================================================
+
+    private void Awake()
+    {
+        if (shooterWeaponBehaviour == null &&
+            playerMovement != null)
+        {
+            shooterWeaponBehaviour =
+                playerMovement
+                    .GetComponentInChildren<
+                        ShooterWeaponBehaviour
+                    >(
+                        true
+                    );
+        }
+
+
+        if (shooterWeaponBehaviour == null)
+        {
+            shooterWeaponBehaviour =
+                FindAnyObjectByType<
+                    ShooterWeaponBehaviour
+                >();
+        }
+    }
 
 
     // ==================================================
@@ -108,10 +148,6 @@ public class UpgradeManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // 이전 선택 상태 제거
-        // ==========================================
-
         if (selectionFeedback != null)
         {
             selectionFeedback
@@ -119,17 +155,8 @@ public class UpgradeManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // 실제 Level 갱신
-        // ==========================================
-
         RefreshCardUI();
 
-
-        // ==========================================
-        // Wipe 뒤에 숨어있는 동안
-        // 등장 준비 상태로 만듦
-        // ==========================================
 
         if (panelIntro != null)
         {
@@ -176,17 +203,21 @@ public class UpgradeManager : MonoBehaviour
     public void ChoosePower()
     {
         if (selectionLocked)
+        {
             return;
+        }
 
 
         selectionLocked =
             true;
 
 
-        if (playerShoot != null)
+        if (shooterWeaponBehaviour != null)
         {
-            playerShoot.bulletDamage +=
-                1;
+            shooterWeaponBehaviour
+                .AddBulletDamage(
+                    1f
+                );
         }
 
 
@@ -195,14 +226,19 @@ public class UpgradeManager : MonoBehaviour
 
         Debug.Log(
             "POWER selected! "
-            + "Damage: "
-            + (
-                playerShoot != null
-                    ? playerShoot.bulletDamage
-                    : 0
+            +
+            "Damage: "
+            +
+            (
+                shooterWeaponBehaviour != null
+                    ? shooterWeaponBehaviour
+                        .BulletDamage
+                    : 0f
             )
-            + " | Level: "
-            + powerLevel
+            +
+            " | Level: "
+            +
+            powerLevel
         );
 
 
@@ -223,17 +259,21 @@ public class UpgradeManager : MonoBehaviour
     public void ChooseRapid()
     {
         if (selectionLocked)
+        {
             return;
+        }
 
 
         selectionLocked =
             true;
 
 
-        if (playerShoot != null)
+        if (shooterWeaponBehaviour != null)
         {
-            playerShoot.fireRate *=
-                1.25f;
+            shooterWeaponBehaviour
+                .MultiplyFireRate(
+                    1.25f
+                );
         }
 
 
@@ -242,14 +282,19 @@ public class UpgradeManager : MonoBehaviour
 
         Debug.Log(
             "RAPID selected! "
-            + "Fire Rate: "
-            + (
-                playerShoot != null
-                    ? playerShoot.fireRate
+            +
+            "Fire Rate: "
+            +
+            (
+                shooterWeaponBehaviour != null
+                    ? shooterWeaponBehaviour
+                        .FireRate
                     : 0f
             )
-            + " | Level: "
-            + rapidLevel
+            +
+            " | Level: "
+            +
+            rapidLevel
         );
 
 
@@ -270,7 +315,9 @@ public class UpgradeManager : MonoBehaviour
     public void ChooseSpeed()
     {
         if (selectionLocked)
+        {
             return;
+        }
 
 
         selectionLocked =
@@ -289,14 +336,18 @@ public class UpgradeManager : MonoBehaviour
 
         Debug.Log(
             "SPEED selected! "
-            + "Move Speed: "
-            + (
+            +
+            "Move Speed: "
+            +
+            (
                 playerMovement != null
                     ? playerMovement.moveSpeed
                     : 0f
             )
-            + " | Level: "
-            + speedLevel
+            +
+            " | Level: "
+            +
+            speedLevel
         );
 
 
@@ -315,7 +366,8 @@ public class UpgradeManager : MonoBehaviour
     // ==================================================
 
     private IEnumerator FinishSelectionRoutine(
-        UpgradeCardUI.UpgradeType selectedType)
+        UpgradeCardUI.UpgradeType selectedType
+    )
     {
         if (selectionFeedback != null)
         {

@@ -33,9 +33,11 @@ public class BossArenaTransitionManager : MonoBehaviour
 
     public Transform bossSpawnPoint;
 
+
     [Header("Boss Battle")]
 
     public BossBattleManager bossBattleManager;
+
 
     // ==================================================
     // Transition
@@ -45,9 +47,11 @@ public class BossArenaTransitionManager : MonoBehaviour
 
     public InkScreenWipe screenWipe;
 
-    public float floorClearHold = 0.50f;
+    public float floorClearHold =
+        0.50f;
 
-    public float revealEndHold = 0.15f;
+    public float revealEndHold =
+        0.15f;
 
 
     // ==================================================
@@ -69,11 +73,10 @@ public class BossArenaTransitionManager : MonoBehaviour
 
     public PlayerMovement playerMovement;
 
-    public PlayerShoot playerShoot;
+    public PlayerWeaponInputController
+        playerWeaponInputController;
 
     public PlayerDive playerDive;
-
-    public PlayerSubWeapon playerSubWeapon;
 
     public PlayerShield playerShield;
 
@@ -94,15 +97,33 @@ public class BossArenaTransitionManager : MonoBehaviour
 
     private bool movementWasEnabled;
 
-    private bool shootWasEnabled;
-
     private bool diveWasEnabled;
 
-    private bool subWeaponWasEnabled;
+    private bool weaponInputWasEnabled;
 
 
     public bool IsTransitionRunning =>
         transitionRunning;
+
+
+    // ==================================================
+    // Awake
+    // ==================================================
+
+    private void Awake()
+    {
+        if (playerWeaponInputController == null &&
+            playerRigidbody != null)
+        {
+            playerWeaponInputController =
+                playerRigidbody
+                    .GetComponentInChildren<
+                        PlayerWeaponInputController
+                    >(
+                        true
+                    );
+        }
+    }
 
 
     // ==================================================
@@ -114,14 +135,18 @@ public class BossArenaTransitionManager : MonoBehaviour
         if (normalArenaRoot != null)
         {
             normalArenaRoot
-                .SetActive(true);
+                .SetActive(
+                    true
+                );
         }
 
 
         if (bossArenaRoot != null)
         {
             bossArenaRoot
-                .SetActive(false);
+                .SetActive(
+                    false
+                );
         }
     }
 
@@ -133,7 +158,9 @@ public class BossArenaTransitionManager : MonoBehaviour
     public void BeginBossTransition()
     {
         if (transitionRunning)
+        {
             return;
+        }
 
 
         StartCoroutine(
@@ -236,10 +263,7 @@ public class BossArenaTransitionManager : MonoBehaviour
 
 
         // ==========================================
-        // 9. Camera도 BossGround로 전환
-        //
-        // 화면이 아직 Wipe로 덮여 있으므로
-        // 순간이동이 보이지 않음
+        // 9. Camera 전환
         // ==========================================
 
         SwitchCameraToBossArena();
@@ -256,7 +280,7 @@ public class BossArenaTransitionManager : MonoBehaviour
 
 
         // ==========================================
-        // 11. Boss Arena Reveal
+        // 11. Arena Reveal
         // ==========================================
 
         if (screenWipe != null)
@@ -268,7 +292,7 @@ public class BossArenaTransitionManager : MonoBehaviour
 
 
         // ==========================================
-        // 12. Reveal 후 잠깐 여유
+        // 12. Reveal Hold
         // ==========================================
 
         if (revealEndHold > 0f)
@@ -281,9 +305,7 @@ public class BossArenaTransitionManager : MonoBehaviour
 
 
         // ==========================================
-        // Boss Intro + Spawn
-        //
-        // 이 동안 Player는 계속 잠금 상태
+        // Boss Intro
         // ==========================================
 
         if (bossBattleManager != null)
@@ -296,14 +318,14 @@ public class BossArenaTransitionManager : MonoBehaviour
 
 
         // ==========================================
-        // Player 먼저 조작 허용
+        // Player 조작 허용
         // ==========================================
 
         UnlockPlayer();
 
 
         // ==========================================
-        // 그 직후 실제 Boss Combat 시작
+        // Boss Combat
         // ==========================================
 
         if (bossBattleManager != null)
@@ -332,21 +354,20 @@ public class BossArenaTransitionManager : MonoBehaviour
         if (normalArenaRoot != null)
         {
             normalArenaRoot
-                .SetActive(false);
+                .SetActive(
+                    false
+                );
         }
 
 
         if (bossArenaRoot != null)
         {
             bossArenaRoot
-                .SetActive(true);
+                .SetActive(
+                    true
+                );
         }
 
-
-        // ==========================================
-        // InkMap
-        // Ground → BossGround
-        // ==========================================
 
         if (InkMap.Instance != null &&
             bossGround != null)
@@ -408,7 +429,6 @@ public class BossArenaTransitionManager : MonoBehaviour
                 .position;
 
 
-
         playerRigidbody.position =
             new Vector2(
                 targetPosition.x,
@@ -435,7 +455,7 @@ public class BossArenaTransitionManager : MonoBehaviour
 
 
     // ==================================================
-    // Camera Boss Arena 전환
+    // Camera Boss Arena
     // ==================================================
 
     private void SwitchCameraToBossArena()
@@ -446,6 +466,7 @@ public class BossArenaTransitionManager : MonoBehaviour
                 "Boss Arena: CameraFollow가 연결되지 않았습니다."
             );
 
+
             return;
         }
 
@@ -455,6 +476,7 @@ public class BossArenaTransitionManager : MonoBehaviour
             Debug.LogError(
                 "Boss Arena: Boss Camera Bounds가 없습니다."
             );
+
 
             return;
         }
@@ -473,6 +495,28 @@ public class BossArenaTransitionManager : MonoBehaviour
 
     private void LockPlayer()
     {
+        // ==========================================
+        // Weapon Input
+        // ==========================================
+
+        if (playerWeaponInputController != null)
+        {
+            weaponInputWasEnabled =
+                playerWeaponInputController
+                    .InputEnabled;
+
+
+            playerWeaponInputController
+                .SetInputEnabled(
+                    false
+                );
+        }
+
+
+        // ==========================================
+        // Rigidbody
+        // ==========================================
+
         if (playerRigidbody != null)
         {
             originalSimulated =
@@ -488,6 +532,10 @@ public class BossArenaTransitionManager : MonoBehaviour
         }
 
 
+        // ==========================================
+        // Movement
+        // ==========================================
+
         if (playerMovement != null)
         {
             movementWasEnabled =
@@ -499,16 +547,9 @@ public class BossArenaTransitionManager : MonoBehaviour
         }
 
 
-        if (playerShoot != null)
-        {
-            shootWasEnabled =
-                playerShoot.enabled;
-
-
-            playerShoot.enabled =
-                false;
-        }
-
+        // ==========================================
+        // Dive
+        // ==========================================
 
         if (playerDive != null)
         {
@@ -517,17 +558,6 @@ public class BossArenaTransitionManager : MonoBehaviour
 
 
             playerDive.enabled =
-                false;
-        }
-
-
-        if (playerSubWeapon != null)
-        {
-            subWeaponWasEnabled =
-                playerSubWeapon.enabled;
-
-
-            playerSubWeapon.enabled =
                 false;
         }
     }
@@ -539,6 +569,10 @@ public class BossArenaTransitionManager : MonoBehaviour
 
     private void UnlockPlayer()
     {
+        // ==========================================
+        // Rigidbody
+        // ==========================================
+
         if (playerRigidbody != null)
         {
             playerRigidbody.simulated =
@@ -550,6 +584,10 @@ public class BossArenaTransitionManager : MonoBehaviour
         }
 
 
+        // ==========================================
+        // Movement
+        // ==========================================
+
         if (playerMovement != null)
         {
             playerMovement.enabled =
@@ -557,12 +595,9 @@ public class BossArenaTransitionManager : MonoBehaviour
         }
 
 
-        if (playerShoot != null)
-        {
-            playerShoot.enabled =
-                shootWasEnabled;
-        }
-
+        // ==========================================
+        // Dive
+        // ==========================================
 
         if (playerDive != null)
         {
@@ -571,10 +606,16 @@ public class BossArenaTransitionManager : MonoBehaviour
         }
 
 
-        if (playerSubWeapon != null)
+        // ==========================================
+        // Weapon Input
+        // ==========================================
+
+        if (playerWeaponInputController != null)
         {
-            playerSubWeapon.enabled =
-                subWeaponWasEnabled;
+            playerWeaponInputController
+                .SetInputEnabled(
+                    weaponInputWasEnabled
+                );
         }
 
 
@@ -589,22 +630,29 @@ public class BossArenaTransitionManager : MonoBehaviour
     private void ClearFloorCombatObjects()
     {
         FloorCleanupObject[] cleanupObjects =
-            FindObjectsByType<FloorCleanupObject>(
+            FindObjectsByType<
+                FloorCleanupObject
+            >(
                 FindObjectsInactive.Exclude
             );
 
 
         foreach (
             FloorCleanupObject cleanupObject
-            in cleanupObjects)
+            in cleanupObjects
+        )
         {
             if (cleanupObject == null)
+            {
                 continue;
+            }
 
 
             cleanupObject
                 .gameObject
-                .SetActive(false);
+                .SetActive(
+                    false
+                );
 
 
             Destroy(

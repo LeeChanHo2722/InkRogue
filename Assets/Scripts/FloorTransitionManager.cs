@@ -28,17 +28,20 @@ public class FloorTransitionManager : MonoBehaviour
 
     public PlayerMovement playerMovement;
 
-    public PlayerShoot playerShoot;
+    public PlayerWeaponInputController
+        playerWeaponInputController;
 
     public PlayerDive playerDive;
-
-    public PlayerSubWeapon playerSubWeapon;
 
     public PlayerFloorSpawnVisual playerSpawnVisual;
 
     public PlayerShield playerShield;
 
+    public CameraFollow cameraFollow;
+
     public PlayerInkResource playerInkResource;
+
+    public PlayerLifeManager playerLifeManager;
 
 
     // ==================================================
@@ -89,10 +92,26 @@ public class FloorTransitionManager : MonoBehaviour
 
 
     [Tooltip(
+        "리스폰 시 죽은 위치에서 Spawn Point까지 "
+        + "카메라가 이동하는 시간"
+    )]
+    public float respawnCameraMoveDuration =
+        0.45f;
+
+
+    [Tooltip(
         "Floor Clear 문구 유지 시간"
     )]
     public float floorClearHoldDuration =
         0.45f;
+
+
+    [Tooltip(
+        "리스폰 시 화면이 완전히 가려진 상태로 "
+        + "유지하는 시간"
+    )]
+    public float respawnCoveredHoldDuration =
+        0.15f;
 
 
     [Tooltip(
@@ -139,9 +158,14 @@ public class FloorTransitionManager : MonoBehaviour
                 playerRigidbody.simulated;
 
 
-            // ==========================================
-            // 연결 안 했어도 Player에서 자동 검색
-            // ==========================================
+            if (playerLifeManager == null)
+            {
+                playerLifeManager =
+                    FindAnyObjectByType<
+                        PlayerLifeManager
+                    >();
+            }
+
 
             if (playerShield == null)
             {
@@ -161,6 +185,18 @@ public class FloorTransitionManager : MonoBehaviour
                             PlayerInkResource
                         >();
             }
+
+
+            if (playerWeaponInputController == null)
+            {
+                playerWeaponInputController =
+                    playerRigidbody
+                        .GetComponentInChildren<
+                            PlayerWeaponInputController
+                        >(
+                            true
+                        );
+            }
         }
     }
 
@@ -171,8 +207,6 @@ public class FloorTransitionManager : MonoBehaviour
 
     private void Start()
     {
-        // 이전 Play 종료 등의 이유로
-        // TimeScale이 비정상 값에 남는 것 방지
         RestoreTimeScale();
 
 
@@ -198,29 +232,16 @@ public class FloorTransitionManager : MonoBehaviour
         LockPlayer();
 
 
-        // ==========================================
-        // 처음 파란 화면 잠깐 유지
-        // ==========================================
-
         yield return
             new WaitForSecondsRealtime(
                 gameStartHoldDuration
             );
 
 
-        // ==========================================
-        // 화면이 가려져 있을 때
-        // Floor 준비
-        // ==========================================
-
         yield return StartCoroutine(
             PrepareFloorStartRoutine()
         );
 
-
-        // ==========================================
-        // 맵 공개
-        // ==========================================
 
         if (screenWipe != null)
         {
@@ -229,10 +250,6 @@ public class FloorTransitionManager : MonoBehaviour
             );
         }
 
-
-        // ==========================================
-        // Wipe 이후 Player 등장 전 텀
-        // ==========================================
 
         if (playerSpawnDelay > 0f)
         {
@@ -243,10 +260,6 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // Player Spawn VFX
-        // ==========================================
-
         if (playerSpawnVisual != null)
         {
             yield return StartCoroutine(
@@ -255,9 +268,14 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // Floor Title
-        // ==========================================
+        if (playerLifeManager != null)
+        {
+            playerLifeManager
+                .SetHUDVisible(
+                    true
+                );
+        }
+
 
         if (floorStartTitleUI != null &&
             floorManager != null)
@@ -272,10 +290,6 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // Enemy Spawn 전 여유
-        // ==========================================
-
         if (enemySpawnDelay > 0f)
         {
             yield return
@@ -284,10 +298,6 @@ public class FloorTransitionManager : MonoBehaviour
                 );
         }
 
-
-        // ==========================================
-        // Enemy Spawn
-        // ==========================================
 
         if (floorManager != null)
         {
@@ -332,20 +342,17 @@ public class FloorTransitionManager : MonoBehaviour
         LockPlayer();
 
 
-        // ==========================================
-        // Floor Clear 순간
-        // 기존 Bullet / Bomb 즉시 제거
-        // ==========================================
+        if (playerLifeManager != null)
+        {
+            playerLifeManager
+                .SetHUDVisible(
+                    false
+                );
+        }
+
 
         ClearFloorCombatObjects();
 
-
-        // ==========================================
-        // Slow Motion 시작
-        //
-        // 마지막 적이 죽는 순간부터
-        // 바로 느려진다.
-        // ==========================================
 
         if (slowMotion != null)
         {
@@ -360,12 +367,6 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // Kill Moment
-        //
-        // 아주 짧게 마지막 적 사망을 보여줌
-        // ==========================================
-
         if (floorClearSlowLead > 0f)
         {
             yield return
@@ -374,13 +375,6 @@ public class FloorTransitionManager : MonoBehaviour
                 );
         }
 
-
-        // ==========================================
-        // Floor Clear Text 유지
-        //
-        // Realtime을 사용하므로
-        // Inspector의 0.45는 실제 0.45초
-        // ==========================================
 
         if (floorClearHoldDuration > 0f)
         {
@@ -391,10 +385,6 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // Slow 상태 그대로 Wipe
-        // ==========================================
-
         if (screenWipe != null)
         {
             yield return StartCoroutine(
@@ -403,17 +393,17 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // 화면이 완전히 덮인 뒤
-        // 정상 속도 복구
-        // ==========================================
+        if (playerLifeManager != null)
+        {
+            playerLifeManager
+                .SetHUDVisible(
+                    false
+                );
+        }
+
 
         RestoreTimeScale();
 
-
-        // ==========================================
-        // Floor Clear Text 제거
-        // ==========================================
 
         if (floorManager != null)
         {
@@ -422,10 +412,6 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // Upgrade 준비
-        // ==========================================
-
         if (upgradeManager != null)
         {
             upgradeManager
@@ -433,14 +419,9 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // Upgrade 중 게임 정지
         Time.timeScale =
             0f;
 
-
-        // ==========================================
-        // Upgrade 화면 공개
-        // ==========================================
 
         if (screenWipe != null)
         {
@@ -449,10 +430,6 @@ public class FloorTransitionManager : MonoBehaviour
             );
         }
 
-
-        // ==========================================
-        // Upgrade Title + Card Animation
-        // ==========================================
 
         if (upgradeManager != null)
         {
@@ -479,11 +456,15 @@ public class FloorTransitionManager : MonoBehaviour
     public void UpgradeSelected()
     {
         if (!waitingForUpgrade)
+        {
             return;
+        }
 
 
         if (transitionRunning)
+        {
             return;
+        }
 
 
         StartCoroutine(
@@ -506,10 +487,6 @@ public class FloorTransitionManager : MonoBehaviour
             false;
 
 
-        // ==========================================
-        // Upgrade 화면 가리기
-        // ==========================================
-
         if (screenWipe != null)
         {
             yield return StartCoroutine(
@@ -518,9 +495,14 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // Upgrade UI 제거
-        // ==========================================
+        if (playerLifeManager != null)
+        {
+            playerLifeManager
+                .SetHUDVisible(
+                    true
+                );
+        }
+
 
         if (upgradeManager != null)
         {
@@ -529,16 +511,8 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // 정상속도 복구
-        // ==========================================
-
         RestoreTimeScale();
 
-
-        // ==========================================
-        // 다음 Floor
-        // ==========================================
 
         if (floorManager != null)
         {
@@ -547,20 +521,10 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // Ink Reset
-        // Player 이동
-        // Player 숨김
-        // ==========================================
-
         yield return StartCoroutine(
             PrepareFloorStartRoutine()
         );
 
-
-        // ==========================================
-        // 새 Floor 공개
-        // ==========================================
 
         if (screenWipe != null)
         {
@@ -569,10 +533,6 @@ public class FloorTransitionManager : MonoBehaviour
             );
         }
 
-
-        // ==========================================
-        // Player 등장 전 텀
-        // ==========================================
 
         if (playerSpawnDelay > 0f)
         {
@@ -583,10 +543,6 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // Player Spawn VFX
-        // ==========================================
-
         if (playerSpawnVisual != null)
         {
             yield return StartCoroutine(
@@ -596,9 +552,14 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // Floor Start Title
-        // ==========================================
+        if (playerLifeManager != null)
+        {
+            playerLifeManager
+                .SetHUDVisible(
+                    true
+                );
+        }
+
 
         if (floorStartTitleUI != null &&
             floorManager != null)
@@ -613,10 +574,6 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // Enemy Spawn 전 여유
-        // ==========================================
-
         if (enemySpawnDelay > 0f)
         {
             yield return
@@ -625,10 +582,6 @@ public class FloorTransitionManager : MonoBehaviour
                 );
         }
 
-
-        // ==========================================
-        // Enemy Spawn
-        // ==========================================
 
         if (floorManager != null)
         {
@@ -651,10 +604,6 @@ public class FloorTransitionManager : MonoBehaviour
 
     private IEnumerator PrepareFloorStartRoutine()
     {
-        // ==========================================
-        // InkMap 준비 기다리기
-        // ==========================================
-
         float waitTimer =
             0f;
 
@@ -680,16 +629,8 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // 남아있는 전투 Object 최종 정리
-        // ==========================================
-
         ClearFloorCombatObjects();
 
-
-        // ==========================================
-        // Ink 초기화
-        // ==========================================
 
         if (InkMap.Instance != null &&
             InkMap.Instance.IsReady)
@@ -699,10 +640,6 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // Player Ink Reset
-        // ==========================================
-
         if (playerInkResource != null)
         {
             playerInkResource
@@ -710,9 +647,12 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // Shield Reset
-        // ==========================================
+        if (playerLifeManager != null)
+        {
+            playerLifeManager
+                .ResetForNewFloor();
+        }
+
 
         if (playerShield != null)
         {
@@ -721,16 +661,8 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // ==========================================
-        // Player Spawn Point 이동
-        // ==========================================
-
         TeleportPlayerToSpawnPoint();
 
-
-        // ==========================================
-        // Player 숨김
-        // ==========================================
 
         if (playerSpawnVisual != null)
         {
@@ -739,8 +671,158 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        // Physics / Transform 반영
         yield return null;
+    }
+
+
+    // ==================================================
+    // Respawn
+    // ==================================================
+
+    public IEnumerator RespawnPlayerRoutine(
+        float respawnDelay,
+        float invulnerabilityDuration
+    )
+    {
+        if (transitionRunning)
+        {
+            yield break;
+        }
+
+
+        transitionRunning =
+            true;
+
+
+        float previousTimeScale =
+            Time.timeScale;
+
+
+        Time.timeScale =
+            0f;
+
+
+        LockPlayer();
+
+
+        if (cameraFollow != null)
+        {
+            cameraFollow
+                .BeginCinematicMode();
+        }
+
+
+        if (respawnDelay > 0f)
+        {
+            yield return
+                new WaitForSecondsRealtime(
+                    respawnDelay
+                );
+        }
+
+
+        if (screenWipe != null)
+        {
+            yield return StartCoroutine(
+                screenWipe.Cover()
+            );
+        }
+
+
+        if (playerSpawnVisual != null)
+        {
+            playerSpawnVisual
+                .PrepareHidden();
+        }
+
+
+        TeleportPlayerToSpawnPoint();
+
+
+        if (playerInkResource != null)
+        {
+            playerInkResource
+                .FillInk();
+        }
+
+
+        yield return null;
+
+
+        if (respawnCoveredHoldDuration > 0f)
+        {
+            yield return
+                new WaitForSecondsRealtime(
+                    respawnCoveredHoldDuration
+                );
+        }
+
+
+        if (screenWipe != null)
+        {
+            yield return StartCoroutine(
+                screenWipe.Reveal()
+            );
+        }
+
+
+        if (cameraFollow != null)
+        {
+            yield return StartCoroutine(
+                cameraFollow
+                    .MoveToPlayerRealtime(
+                        respawnCameraMoveDuration
+                    )
+            );
+        }
+
+
+        if (playerShield != null)
+        {
+            playerShield
+                .ResetAfterRespawn(
+                    invulnerabilityDuration
+                );
+        }
+
+
+        if (playerSpawnVisual != null)
+        {
+            playerSpawnVisual
+                .PrepareHidden();
+        }
+
+
+        yield return null;
+
+
+        if (playerSpawnVisual != null)
+        {
+            yield return StartCoroutine(
+                playerSpawnVisual
+                    .PlaySpawn()
+            );
+        }
+
+
+        if (cameraFollow != null)
+        {
+            cameraFollow
+                .EndCinematicMode();
+        }
+
+
+        Time.timeScale =
+            previousTimeScale > 0f
+                ? previousTimeScale
+                : 1f;
+
+
+        UnlockPlayer();
+
+
+        transitionRunning =
+            false;
     }
 
 
@@ -751,21 +833,24 @@ public class FloorTransitionManager : MonoBehaviour
     private void ClearFloorCombatObjects()
     {
         FloorCleanupObject[] cleanupObjects =
-            FindObjectsByType<FloorCleanupObject>(
+            FindObjectsByType<
+                FloorCleanupObject
+            >(
                 FindObjectsInactive.Exclude
             );
 
 
         foreach (
             FloorCleanupObject cleanupObject
-            in cleanupObjects)
+            in cleanupObjects
+        )
         {
             if (cleanupObject == null)
+            {
                 continue;
+            }
 
 
-            // Destroy는 Frame 끝에 처리될 수 있으므로
-            // 먼저 비활성화해서 충돌 / Ink 생성 차단
             cleanupObject
                 .gameObject
                 .SetActive(
@@ -867,8 +952,30 @@ public class FloorTransitionManager : MonoBehaviour
     // Player Lock
     // ==================================================
 
+    public void LockPlayerForDeath()
+    {
+        LockPlayer();
+    }
+
+
     private void LockPlayer()
     {
+        // ==========================================
+        // Weapon Input
+        //
+        // 현재 사용 중인 Shooter / Bomb을
+        // 먼저 취소하고 이후 입력 차단.
+        // ==========================================
+
+        if (playerWeaponInputController != null)
+        {
+            playerWeaponInputController
+                .SetInputEnabled(
+                    false
+                );
+        }
+
+
         if (playerRigidbody != null)
         {
             playerRigidbody.linearVelocity =
@@ -887,23 +994,9 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        if (playerShoot != null)
-        {
-            playerShoot.enabled =
-                false;
-        }
-
-
         if (playerDive != null)
         {
             playerDive.enabled =
-                false;
-        }
-
-
-        if (playerSubWeapon != null)
-        {
-            playerSubWeapon.enabled =
                 false;
         }
     }
@@ -933,13 +1026,6 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        if (playerShoot != null)
-        {
-            playerShoot.enabled =
-                true;
-        }
-
-
         if (playerDive != null)
         {
             playerDive.enabled =
@@ -947,10 +1033,12 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        if (playerSubWeapon != null)
+        if (playerWeaponInputController != null)
         {
-            playerSubWeapon.enabled =
-                true;
+            playerWeaponInputController
+                .SetInputEnabled(
+                    true
+                );
         }
     }
 
@@ -980,8 +1068,6 @@ public class FloorTransitionManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Scene 종료 / Script Reload 등에서도
-        // 느린 상태가 남지 않도록 복구
         RestoreTimeScale();
     }
 }
