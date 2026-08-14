@@ -32,3 +32,6 @@ Thumbs.db
 
 # Old upgrade report
 UpgradeLog*.htm
+
+# Graphify generated output
+graphify-out/
