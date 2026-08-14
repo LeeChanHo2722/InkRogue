@@ -3,74 +3,167 @@ using UnityEngine;
 
 public class SplashBomb : MonoBehaviour
 {
+    // ==================================================
+    // Ballistic Physics
+    // ==================================================
+
     [Header("Ballistic Physics")]
+
     public float gravity = 18f;
+
 
     [Range(20f, 70f)]
     public float launchAngle = 45f;
 
+
     [Tooltip("높이에 따라 폭탄 Sprite가 커지는 정도")]
-    public float visualScalePerHeight = 0.10f;
+    public float visualScalePerHeight =
+        0.10f;
+
 
     private Vector3 visualBaseScale;
 
 
+    // ==================================================
+    // Wall Bounce
+    // ==================================================
+
     [Header("Wall Bounce")]
+
     [Range(0f, 1f)]
     [Tooltip("벽 충돌 후 유지되는 수평 속도 비율")]
-    public float wallBounceRetention = 0.72f;
+    public float wallBounceRetention =
+        0.72f;
+
 
     [Tooltip("이 속도보다 느려지면 수평 이동 정지")]
-    public float minimumGroundSpeed = 0.5f;
+    public float minimumGroundSpeed =
+        0.5f;
 
+
+    // ==================================================
+    // Landing
+    // ==================================================
 
     [Header("Landing")]
-    [Tooltip("착지 후 폭발까지 대기 시간")]
-    public float groundFuseTime = 0.55f;
 
+    [Tooltip("착지 후 폭발까지 대기 시간")]
+    public float groundFuseTime =
+        0.55f;
+
+
+    // ==================================================
+    // Explosion
+    // ==================================================
 
     [Header("Explosion")]
-    public float innerDamageRadius = 0.75f;
-    public float outerDamageRadius = 1.6f;
 
-    public int innerDamage = 12;
-    public int outerDamage = 6;
+    public float innerDamageRadius =
+        0.75f;
 
+
+    public float outerDamageRadius =
+        1.6f;
+
+
+    public float innerDamage =
+        12f;
+
+
+    public float outerDamage =
+        6f;
+
+
+    // ==================================================
+    // Ink
+    // ==================================================
 
     [Header("Ink")]
-    public float inkRadius = 2.2f;
-    public int inkSplatCount = 32;
 
+    public float inkRadius =
+        2.2f;
+
+
+    public int inkSplatCount =
+        32;
+
+
+    // ==================================================
+    // Collision
+    // ==================================================
 
     [Header("Collision")]
+
     public LayerMask obstacleLayer;
 
 
+    // ==================================================
+    // Visual
+    // ==================================================
+
     [Header("Visual")]
+
     public Transform visual;
 
 
+    // ==================================================
+    // Runtime Damage
+    //
+    // 어느 Slot에서 던졌는지에 따른
+    // Damage 배율.
+    //
+    // Right = 1.0
+    // Left  = 0.8
+    // ==================================================
+
+    private float damageMultiplier =
+        1f;
+
+
+    // ==================================================
+    // Physics Runtime
+    // ==================================================
+
     private Rigidbody2D rb;
 
-    // 실제 바닥 XY 방향의 속도
+
+    // 실제 바닥 XY 방향 속도
     private Vector2 groundVelocity;
+
 
     // 가상의 높이
     private float verticalHeight;
 
+
     // 가상의 수직 속도
     private float verticalVelocity;
 
-    private bool isFlying = false;
-    private bool hasLanded = false;
-    private bool hasExploded = false;
 
-    private float groundFuseTimer = 0f;
+    private bool isFlying =
+        false;
 
+
+    private bool hasLanded =
+        false;
+
+
+    private bool hasExploded =
+        false;
+
+
+    private float groundFuseTimer =
+        0f;
+
+
+    // ==================================================
+    // Awake
+    // ==================================================
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
+        rb =
+            GetComponent<Rigidbody2D>();
+
 
         if (visual != null)
         {
@@ -82,24 +175,37 @@ public class SplashBomb : MonoBehaviour
 
     // ==================================================
     // 발사 속도 계산
-    // Preview와 실제 폭탄이 동일한 계산을 사용
+    //
+    // Preview와 실제 폭탄이
+    // 완전히 동일한 계산 사용
     // ==================================================
 
     public void CalculateLaunchVelocity(
         float targetRange,
         out float horizontalSpeed,
-        out float verticalSpeed)
+        out float verticalSpeed
+    )
     {
         targetRange =
-            Mathf.Max(targetRange, 0.01f);
+            Mathf.Max(
+                targetRange,
+                0.01f
+            );
+
 
         float angleRadians =
-            launchAngle * Mathf.Deg2Rad;
+            launchAngle
+            *
+            Mathf.Deg2Rad;
+
 
         float sinDoubleAngle =
             Mathf.Sin(
-                2f * angleRadians
+                2f
+                *
+                angleRadians
             );
+
 
         sinDoubleAngle =
             Mathf.Max(
@@ -107,30 +213,92 @@ public class SplashBomb : MonoBehaviour
                 0.01f
             );
 
+
         float launchSpeed =
             Mathf.Sqrt(
                 targetRange
-                * gravity
-                / sinDoubleAngle
+                *
+                gravity
+                /
+                sinDoubleAngle
             );
+
 
         horizontalSpeed =
             launchSpeed
-            * Mathf.Cos(angleRadians);
+            *
+            Mathf.Cos(
+                angleRadians
+            );
+
 
         verticalSpeed =
             launchSpeed
-            * Mathf.Sin(angleRadians);
+            *
+            Mathf.Sin(
+                angleRadians
+            );
     }
 
 
     // ==================================================
     // Launch
+    //
+    // 신규 Weapon Slot 버전
     // ==================================================
 
     public void Launch(
         Vector2 direction,
-        float targetRange)
+        float targetRange,
+        float slotDamageMultiplier
+    )
+    {
+        damageMultiplier =
+            Mathf.Max(
+                0f,
+                slotDamageMultiplier
+            );
+
+
+        LaunchInternal(
+            direction,
+            targetRange
+        );
+    }
+
+
+    // ==================================================
+    // Legacy Launch
+    //
+    // 다른 기존 코드가 아직
+    // Launch(direction, range)를 호출하더라도
+    // 깨지지 않도록 유지.
+    // ==================================================
+
+    public void Launch(
+        Vector2 direction,
+        float targetRange
+    )
+    {
+        damageMultiplier =
+            1f;
+
+
+        LaunchInternal(
+            direction,
+            targetRange
+        );
+    }
+
+
+    // ==================================================
+    // Launch Internal
+    // ==================================================
+
+    private void LaunchInternal(
+        Vector2 direction,
+        float targetRange
+    )
     {
         if (direction.sqrMagnitude <
             0.001f)
@@ -138,6 +306,7 @@ public class SplashBomb : MonoBehaviour
             direction =
                 Vector2.right;
         }
+
 
         direction.Normalize();
 
@@ -151,54 +320,84 @@ public class SplashBomb : MonoBehaviour
 
         groundVelocity =
             direction
-            * horizontalSpeed;
+            *
+            horizontalSpeed;
+
 
         verticalVelocity =
             startVerticalSpeed;
+
 
         verticalHeight =
             0.01f;
 
 
-        isFlying = true;
-        hasLanded = false;
-        hasExploded = false;
+        isFlying =
+            true;
+
+
+        hasLanded =
+            false;
+
+
+        hasExploded =
+            false;
+
 
         groundFuseTimer =
             0f;
 
 
-        rb.linearVelocity =
-            groundVelocity;
+        if (rb != null)
+        {
+            rb.linearVelocity =
+                groundVelocity;
+        }
     }
 
 
     // ==================================================
-    // 비행
+    // Fixed Update
     // ==================================================
 
     private void FixedUpdate()
     {
         if (!isFlying)
+        {
             return;
+        }
 
 
-        // 실제 Rigidbody는
-        // 바닥의 XY 방향으로 이동
-        rb.linearVelocity =
-            groundVelocity;
+        // ==========================================
+        // 실제 Rigidbody는 바닥 XY 이동
+        // ==========================================
+
+        if (rb != null)
+        {
+            rb.linearVelocity =
+                groundVelocity;
+        }
 
 
-        // 가상 높이에는 중력 적용
+        // ==========================================
+        // 가상 높이 중력
+        // ==========================================
+
         verticalVelocity -=
             gravity
-            * Time.fixedDeltaTime;
+            *
+            Time.fixedDeltaTime;
 
 
         verticalHeight +=
             verticalVelocity
-            * Time.fixedDeltaTime;
+            *
+            Time.fixedDeltaTime;
 
+
+        // ==========================================
+        // Visual Height
+        // ==========================================
 
         if (visual != null)
         {
@@ -208,20 +407,30 @@ public class SplashBomb : MonoBehaviour
                     verticalHeight
                 );
 
+
             float scaleMultiplier =
-                1f +
-                height * visualScalePerHeight;
+                1f
+                +
+                height
+                *
+                visualScalePerHeight;
+
 
             visual.localPosition =
                 Vector3.zero;
 
+
             visual.localScale =
                 visualBaseScale
-                * scaleMultiplier;
+                *
+                scaleMultiplier;
         }
 
 
-        // 다시 지면 높이에 도달하면 착지
+        // ==========================================
+        // Ground Landing
+        // ==========================================
+
         if (verticalHeight <= 0f &&
             verticalVelocity < 0f)
         {
@@ -231,7 +440,7 @@ public class SplashBomb : MonoBehaviour
 
 
     // ==================================================
-    // 착지 후 Fuse
+    // Update
     // ==================================================
 
     private void Update()
@@ -256,11 +465,12 @@ public class SplashBomb : MonoBehaviour
 
 
     // ==================================================
-    // 벽 반사
+    // Wall Bounce
     // ==================================================
 
     private void OnCollisionEnter2D(
-        Collision2D collision)
+        Collision2D collision
+    )
     {
         if (!isFlying ||
             hasExploded)
@@ -269,23 +479,29 @@ public class SplashBomb : MonoBehaviour
         }
 
 
-        // Obstacle Layer인지 확인
         int collisionLayer =
             collision.gameObject.layer;
+
 
         bool isObstacle =
             (
                 obstacleLayer.value
-                & (1 << collisionLayer)
-            ) != 0;
+                &
+                (1 << collisionLayer)
+            )
+            != 0;
 
 
         if (!isObstacle)
+        {
             return;
+        }
 
 
         if (collision.contactCount <= 0)
+        {
             return;
+        }
 
 
         Vector2 wallNormal =
@@ -294,7 +510,6 @@ public class SplashBomb : MonoBehaviour
                 .normal;
 
 
-        // 벽의 법선 방향을 기준으로 반사
         groundVelocity =
             Vector2.Reflect(
                 groundVelocity,
@@ -302,7 +517,6 @@ public class SplashBomb : MonoBehaviour
             );
 
 
-        // 충돌하면서 에너지 일부 손실
         groundVelocity *=
             wallBounceRetention;
 
@@ -315,8 +529,11 @@ public class SplashBomb : MonoBehaviour
         }
 
 
-        rb.linearVelocity =
-            groundVelocity;
+        if (rb != null)
+        {
+            rb.linearVelocity =
+                groundVelocity;
+        }
     }
 
 
@@ -327,30 +544,43 @@ public class SplashBomb : MonoBehaviour
     private void Land()
     {
         if (hasLanded)
+        {
             return;
+        }
 
 
-        isFlying = false;
-        hasLanded = true;
+        isFlying =
+            false;
+
+
+        hasLanded =
+            true;
+
 
         verticalHeight =
             0f;
 
+
         verticalVelocity =
             0f;
+
 
         groundVelocity =
             Vector2.zero;
 
 
-        rb.linearVelocity =
-            Vector2.zero;
+        if (rb != null)
+        {
+            rb.linearVelocity =
+                Vector2.zero;
+        }
 
 
         if (visual != null)
         {
             visual.localPosition =
                 Vector3.zero;
+
 
             visual.localScale =
                 visualBaseScale;
@@ -364,14 +594,27 @@ public class SplashBomb : MonoBehaviour
 
     private void Explode()
     {
+        if (hasExploded)
+        {
+            return;
+        }
+
+
+        hasExploded =
+            true;
+
+
+        // ==========================================
+        // VFX
+        // ==========================================
 
         CreateExplosionVFX();
 
-        if (hasExploded)
-            return;
 
+        // ==========================================
+        // SFX
+        // ==========================================
 
-        hasExploded = true;
         if (GameAudioManager.Instance != null)
         {
             GameAudioManager.Instance
@@ -379,7 +622,48 @@ public class SplashBomb : MonoBehaviour
         }
 
 
+        // ==========================================
+        // Normal Enemy Damage
+        // ==========================================
 
+        DamageEnemies();
+
+
+        // ==========================================
+        // Boss Damage
+        // ==========================================
+
+        DamageBosses();
+
+
+        // ==========================================
+        // Ink Explosion
+        // ==========================================
+
+        if (InkMap.Instance != null)
+        {
+            InkMap.Instance.PaintExplosion(
+                transform.position,
+                inkRadius,
+                InkTeam.Player,
+                inkSplatCount
+            );
+        }
+
+
+        // 모든 폭발 처리가 끝난 후 삭제
+        Destroy(
+            gameObject
+        );
+    }
+
+
+    // ==================================================
+    // Enemy Damage
+    // ==================================================
+
+    private void DamageEnemies()
+    {
         Collider2D[] hits =
             Physics2D.OverlapCircleAll(
                 transform.position,
@@ -387,50 +671,65 @@ public class SplashBomb : MonoBehaviour
             );
 
 
-        HashSet<EnemyHealth> damagedEnemies =
+        HashSet<EnemyHealth>
+            damagedEnemies =
             new HashSet<EnemyHealth>();
 
 
         foreach (Collider2D hit in hits)
         {
             EnemyHealth enemy =
-                hit.GetComponent<EnemyHealth>();
+                hit.GetComponent<
+                    EnemyHealth
+                >();
 
 
             if (enemy == null)
             {
                 enemy =
-                    hit.GetComponentInParent
-                    <EnemyHealth>();
+                    hit.GetComponentInParent<
+                        EnemyHealth
+                    >();
             }
 
 
             if (enemy == null)
+            {
                 continue;
+            }
 
 
-            // Collider가 여러 개인 Enemy의
-            // 중복 Damage 방지
-            if (!damagedEnemies.Add(enemy))
+            // Collider 중복 Damage 방지
+            if (!damagedEnemies.Add(
+                    enemy
+                ))
+            {
                 continue;
+            }
 
 
             Vector2 bombPosition =
                 transform.position;
 
+
             Vector2 enemyPosition =
                 enemy.transform.position;
 
+
             Vector2 difference =
                 enemyPosition
-                - bombPosition;
+                -
+                bombPosition;
+
 
             float distance =
                 difference.magnitude;
 
 
-            // 벽 뒤 적에게 폭발 피해가
-            // 들어가는 것 방지
+            // ==========================================
+            // Wall Blocking
+            // ==========================================
+
             if (distance > 0.001f)
             {
                 RaycastHit2D wallHit =
@@ -449,39 +748,32 @@ public class SplashBomb : MonoBehaviour
             }
 
 
-            if (distance <=
-                innerDamageRadius)
-            {
-                enemy.TakeDamage(
-                    innerDamage
-                );
-            }
-            else
-            {
-                enemy.TakeDamage(
-                    outerDamage
-                );
-            }
-        }
+            float baseDamage =
+                distance <=
+                    innerDamageRadius
+                    ? innerDamage
+                    : outerDamage;
 
 
-        // Ink 폭발
-        if (InkMap.Instance != null)
-        {
-            InkMap.Instance.PaintExplosion(
-                transform.position,
-                inkRadius,
-                InkTeam.Player,
-                inkSplatCount
+            float finalDamage =
+                CalculateFinalDamage(
+                    baseDamage
+                );
+
+
+            enemy.TakeDamage(
+                finalDamage
             );
         }
+    }
 
 
-        Destroy(gameObject);
-        // ==================================================
-        // Boss Damage
-        // ==================================================
+    // ==================================================
+    // Boss Damage
+    // ==================================================
 
+    private void DamageBosses()
+    {
         Collider2D[] bossHitColliders =
             Physics2D.OverlapCircleAll(
                 transform.position,
@@ -489,30 +781,34 @@ public class SplashBomb : MonoBehaviour
             );
 
 
-        HashSet<BossHealth> damagedBosses =
+        HashSet<BossHealth>
+            damagedBosses =
             new HashSet<BossHealth>();
 
 
-        foreach (Collider2D hit
-                 in bossHitColliders)
+        foreach (
+            Collider2D hit
+            in bossHitColliders
+        )
         {
             BossHealth boss =
-                hit.GetComponentInParent<BossHealth>();
+                hit.GetComponentInParent<
+                    BossHealth
+                >();
 
 
             if (boss == null)
+            {
                 continue;
+            }
 
 
-            // Boss가 Collider를 여러 개 가지고 있어도
-            // 폭탄 1개당 한 번만 피해 적용
-            if (damagedBosses.Contains(boss))
+            if (!damagedBosses.Add(
+                    boss
+                ))
+            {
                 continue;
-
-
-            damagedBosses.Add(
-                boss
-            );
+            }
 
 
             Vector2 explosionPosition =
@@ -530,10 +826,6 @@ public class SplashBomb : MonoBehaviour
                 );
 
 
-            // ==========================================
-            // 폭발 범위 밖
-            // ==========================================
-
             if (distance >
                 outerDamageRadius)
             {
@@ -542,12 +834,13 @@ public class SplashBomb : MonoBehaviour
 
 
             // ==========================================
-            // 벽 차단
+            // Wall Blocking
             // ==========================================
 
             Vector2 toBoss =
                 bossPosition
-                - explosionPosition;
+                -
+                explosionPosition;
 
 
             if (distance > 0.001f)
@@ -568,21 +861,42 @@ public class SplashBomb : MonoBehaviour
             }
 
 
-            // ==========================================
-            // Inner / Outer Damage
-            // ==========================================
-
-            int bossDamage =
-                distance <= innerDamageRadius
+            float baseDamage =
+                distance <=
+                    innerDamageRadius
                     ? innerDamage
                     : outerDamage;
 
 
+            float finalDamage =
+                CalculateFinalDamage(
+                    baseDamage
+                );
+
+
             boss.TakeDamage(
-                bossDamage
+                finalDamage
             );
         }
     }
+
+
+    // ==================================================
+    // Damage Calculation
+    // ==================================================
+
+    private float CalculateFinalDamage(
+    float baseDamage
+)
+    {
+        return Mathf.Max(
+            0f,
+            baseDamage
+            *
+            damageMultiplier
+        );
+    }
+
 
     // ==================================================
     // Explosion VFX
@@ -614,12 +928,10 @@ public class SplashBomb : MonoBehaviour
 
         Material material =
             renderer != null
-                ? renderer.sharedMaterial
-                : null;
+            ? renderer.sharedMaterial
+            : null;
 
 
-        // 시각적 외곽 크기는
-        // 실제 Outer Damage Radius 기준
         effect.Initialize(
             outerDamageRadius,
             material
@@ -628,7 +940,7 @@ public class SplashBomb : MonoBehaviour
 
 
     // ==================================================
-    // Editor 확인용
+    // Editor
     // ==================================================
 
     private void OnDrawGizmosSelected()
@@ -637,6 +949,7 @@ public class SplashBomb : MonoBehaviour
             transform.position,
             innerDamageRadius
         );
+
 
         Gizmos.DrawWireSphere(
             transform.position,

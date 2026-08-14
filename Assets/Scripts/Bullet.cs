@@ -10,7 +10,8 @@ public class Bullet : MonoBehaviour
 
     public float lifeTime = 3f;
 
-    public int damage = 1;
+    // int → float
+    public float damage = 1f;
 
 
     // ==================================================
@@ -73,7 +74,9 @@ public class Bullet : MonoBehaviour
     private void Update()
     {
         if (isDestroyed)
+        {
             return;
+        }
 
 
         Vector2 currentPosition =
@@ -100,18 +103,17 @@ public class Bullet : MonoBehaviour
     // ==================================================
 
     private void OnTriggerEnter2D(
-        Collider2D other)
+        Collider2D other
+    )
     {
         if (isDestroyed)
+        {
             return;
+        }
 
 
         // ==========================================
         // Boss
-        //
-        // GetComponentInParent를 사용하므로
-        // 나중에 Boss Collider를
-        // 자식 Object로 분리해도 작동한다.
         // ==========================================
 
         BossHealth boss =
@@ -190,7 +192,9 @@ public class Bullet : MonoBehaviour
     private void FinishBullet()
     {
         if (isDestroyed)
+        {
             return;
+        }
 
 
         isDestroyed =

@@ -3,86 +3,123 @@ using UnityEngine.InputSystem;
 
 public class PlayerDive : MonoBehaviour
 {
+    // ==================================================
+    // Dive
+    // ==================================================
+
     [Header("Dive")]
+
     [Tooltip("발밑 Ink 판정 범위")]
     public float inkSampleRadius = 0.22f;
 
 
+    // ==================================================
+    // Ink Recovery
+    // ==================================================
+
     [Header("Ink Recovery")]
+
     [Range(0f, 1f)]
     [Tooltip("실제 잠수 중 최대 Ink 기준 초당 회복 비율")]
-    public float inkRecoveryPercentPerSecond = 0.25f;
+    public float inkRecoveryPercentPerSecond =
+        0.25f;
 
+
+    // ==================================================
+    // Shield Recovery
+    // ==================================================
 
     [Header("Shield Recovery")]
+
     [Range(0f, 1f)]
     [Tooltip("실제 잠수 중 최대 Shield 기준 초당 회복 비율")]
-    public float shieldRecoveryPercentPerSecond = 0.50f;
+    public float shieldRecoveryPercentPerSecond =
+        0.50f;
+
 
     [Tooltip("내 Ink에 잠긴 뒤 Shield 회복까지 필요한 시간")]
-    public float shieldRecoveryDelay = 1f;
+    public float shieldRecoveryDelay =
+        1f;
 
 
-    // Shift로 변신한 상태
+    // ==================================================
+    // State
+    // ==================================================
+
     [SerializeField]
-    private bool isSwimForm = false;
+    private bool isSwimForm =
+        false;
 
 
-    // 실제 Player Ink 내부에 잠긴 상태
     [SerializeField]
-    private bool isDiving = false;
+    private bool isDiving =
+        false;
 
 
     private float diveStartedTime;
 
 
     // ==================================================
+    // References
+    // ==================================================
+
+    private PlayerInkResource inkResource;
+
+    private PlayerShield playerShield;
+
+    private SplashBombWeaponBehaviour
+        splashBombWeaponBehaviour;
+
+
+    // ==================================================
     // Public State
     // ==================================================
 
-    public bool IsSwimForm
-    {
-        get
-        {
-            return isSwimForm;
-        }
-    }
+    public bool IsSwimForm =>
+        isSwimForm;
 
 
-    public bool IsDiving
-    {
-        get
-        {
-            return isDiving;
-        }
-    }
+    public bool IsDiving =>
+        isDiving;
 
 
-    private PlayerInkResource inkResource;
-    private PlayerShield playerShield;
-    private PlayerSubWeapon subWeapon;
-
+    // ==================================================
+    // Awake
+    // ==================================================
 
     private void Awake()
     {
         inkResource =
-            GetComponent<PlayerInkResource>();
+            GetComponent<
+                PlayerInkResource
+            >();
 
 
         playerShield =
-            GetComponent<PlayerShield>();
+            GetComponent<
+                PlayerShield
+            >();
 
 
-        subWeapon =
-            GetComponentInChildren<PlayerSubWeapon>();
+        splashBombWeaponBehaviour =
+            GetComponentInChildren<
+                SplashBombWeaponBehaviour
+            >(
+                true
+            );
     }
 
+
+    // ==================================================
+    // Update
+    // ==================================================
 
     private void Update()
     {
         if (Keyboard.current == null)
         {
             ExitSwimForm();
+
             return;
         }
 
@@ -100,32 +137,38 @@ public class PlayerDive : MonoBehaviour
         if (!wantsSwimForm)
         {
             ExitSwimForm();
+
             return;
         }
 
 
         // ==================================================
-        // Bomb 차징 중에는 폼 전환 불가
+        // SplashBomb 차징 중
+        //
+        // 잠수는 캐릭터 전체 형태 변화이므로
+        // 어느 손에서든 Bomb 차지 중이면 진입 불가.
         // ==================================================
 
-        if (subWeapon != null &&
-            subWeapon.IsCharging)
+        if (splashBombWeaponBehaviour != null &&
+            splashBombWeaponBehaviour.IsCharging)
         {
             ExitSwimForm();
+
             return;
         }
 
 
-        // 일단 Shift가 눌렸으므로
-        // Swim Form 진입
         EnterSwimForm();
 
 
-        // InkMap을 읽을 수 없다면
-        // 외형만 Swim Form 유지
+        // ==================================================
+        // InkMap 없음
+        // ==================================================
+
         if (InkMap.Instance == null)
         {
             ExitDive();
+
             return;
         }
 
@@ -140,36 +183,32 @@ public class PlayerDive : MonoBehaviour
 
         // ==================================================
         // Enemy Ink
-        //
-        // 기존 규칙:
-        // 상대 Ink에서는 강제 인간 폼
         // ==================================================
 
-        if (currentInk == InkTeam.Enemy)
+        if (currentInk ==
+            InkTeam.Enemy)
         {
             ExitSwimForm();
+
             return;
         }
 
 
         // ==================================================
         // Neutral
-        //
-        // Swim Form은 유지하지만
-        // 실제 잠수 보너스는 없음
         // ==================================================
 
-        if (currentInk != InkTeam.Player)
+        if (currentInk !=
+            InkTeam.Player)
         {
             ExitDive();
+
             return;
         }
 
 
         // ==================================================
         // Player Ink
-        //
-        // 진짜 잠수 상태
         // ==================================================
 
         EnterDive();
@@ -188,13 +227,17 @@ public class PlayerDive : MonoBehaviour
     private void RecoverInk()
     {
         if (inkResource == null)
+        {
             return;
+        }
 
 
         float recoverAmount =
             inkResource.MaxInk
-            * inkRecoveryPercentPerSecond
-            * Time.deltaTime;
+            *
+            inkRecoveryPercentPerSecond
+            *
+            Time.deltaTime;
 
 
         inkResource.RecoverInk(
@@ -210,22 +253,21 @@ public class PlayerDive : MonoBehaviour
     private void RecoverShield()
     {
         if (playerShield == null)
+        {
             return;
+        }
 
 
-        // Emergency에서는 회복 불가
         if (playerShield.IsEmergency)
+        {
             return;
+        }
 
-
-        // ------------------------------------------
-        // 실제 Player Ink에 들어온 뒤
-        // 1초가 지나야 함
-        // ------------------------------------------
 
         float timeSinceDiveStarted =
             Time.time
-            - diveStartedTime;
+            -
+            diveStartedTime;
 
 
         if (timeSinceDiveStarted <
@@ -234,11 +276,6 @@ public class PlayerDive : MonoBehaviour
             return;
         }
 
-
-        // ------------------------------------------
-        // 마지막 Hit 이후에도
-        // 1초가 지나야 함
-        // ------------------------------------------
 
         if (playerShield.TimeSinceLastHit <
             shieldRecoveryDelay)
@@ -249,8 +286,10 @@ public class PlayerDive : MonoBehaviour
 
         float recoverAmount =
             playerShield.MaxShield
-            * shieldRecoveryPercentPerSecond
-            * Time.deltaTime;
+            *
+            shieldRecoveryPercentPerSecond
+            *
+            Time.deltaTime;
 
 
         playerShield.RecoverShield(
@@ -281,23 +320,21 @@ public class PlayerDive : MonoBehaviour
 
 
     // ==================================================
-    // Actual Dive State
+    // Dive State
     // ==================================================
 
     private void EnterDive()
     {
-        // 이미 잠수 중이면
-        // 시작 시간을 다시 초기화하지 않음
         if (isDiving)
+        {
             return;
+        }
 
 
         isDiving =
             true;
 
 
-        // 실제로 Player Ink 안으로
-        // 진입한 순간
         diveStartedTime =
             Time.time;
     }

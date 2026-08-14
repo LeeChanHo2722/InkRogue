@@ -9,26 +9,16 @@ public class SplashBombChargeVFX : MonoBehaviour
 
     [Header("References")]
 
-    public PlayerSubWeapon subWeapon;
+    public SplashBombWeaponBehaviour
+        splashBombWeaponBehaviour;
+
 
     [Tooltip("입자가 모일 중심점")]
     public Transform chargePoint;
 
+
     [Tooltip("Material / Sorting 기준")]
     public SpriteRenderer referenceRenderer;
-
-
-    // ==================================================
-    // Charge
-    // ==================================================
-
-    [Header("Charge")]
-
-    [Tooltip(
-        "시각적으로 최대 충전 상태에 도달하는 시간. " +
-        "실제 Bomb 최대 충전 시간과 맞추세요."
-    )]
-    public float chargeBuildTime = 1.0f;
 
 
     // ==================================================
@@ -37,26 +27,41 @@ public class SplashBombChargeVFX : MonoBehaviour
 
     [Header("Gathering Particles")]
 
-    public int particleCount = 7;
+    public int particleCount =
+        7;
+
 
     [Tooltip("입자가 처음 나타나는 거리")]
-    public float outerRadius = 0.65f;
+    public float outerRadius =
+        0.65f;
+
 
     [Tooltip("중심에서 사라지는 거리")]
-    public float innerRadius = 0.08f;
+    public float innerRadius =
+        0.08f;
 
-    public float particleMinSize = 0.025f;
 
-    public float particleMaxSize = 0.055f;
+    public float particleMinSize =
+        0.025f;
+
+
+    public float particleMaxSize =
+        0.055f;
+
 
     [Tooltip("입자가 중심으로 빨려 들어오는 기본 속도")]
-    public float gatherSpeed = 0.75f;
+    public float gatherSpeed =
+        0.75f;
+
 
     [Tooltip("충전 완료에 가까울수록 추가되는 속도")]
-    public float chargedSpeedBonus = 0.55f;
+    public float chargedSpeedBonus =
+        0.55f;
+
 
     [Tooltip("입자가 직선이 아니라 살짝 회전하며 들어옴")]
-    public float swirlAmount = 55f;
+    public float swirlAmount =
+        55f;
 
 
     // ==================================================
@@ -65,15 +70,24 @@ public class SplashBombChargeVFX : MonoBehaviour
 
     [Header("Center Ring")]
 
-    public int ringSegments = 28;
+    public int ringSegments =
+        28;
 
-    public float ringRadius = 0.16f;
 
-    public float ringMaxRadius = 0.21f;
+    public float ringRadius =
+        0.16f;
 
-    public float ringWidth = 0.025f;
 
-    public float ringPulseSpeed = 7f;
+    public float ringMaxRadius =
+        0.21f;
+
+
+    public float ringWidth =
+        0.025f;
+
+
+    public float ringPulseSpeed =
+        7f;
 
 
     // ==================================================
@@ -82,9 +96,12 @@ public class SplashBombChargeVFX : MonoBehaviour
 
     [Header("Rendering")]
 
-    public int particleSortingOffset = 2;
+    public int particleSortingOffset =
+        2;
 
-    public int ringSortingOffset = 1;
+
+    public int ringSortingOffset =
+        1;
 
 
     // ==================================================
@@ -98,12 +115,11 @@ public class SplashBombChargeVFX : MonoBehaviour
 
     private readonly List<ChargeParticle>
         particles =
-            new List<ChargeParticle>();
+        new List<ChargeParticle>();
 
 
-    private bool wasCharging = false;
-
-    private float chargeStartedTime = 0f;
+    private bool wasCharging =
+        false;
 
 
     private Color playerColor;
@@ -135,23 +151,15 @@ public class SplashBombChargeVFX : MonoBehaviour
 
     private void Awake()
     {
-        // ==========================================
-        // References 자동 검색
-        // ==========================================
-
-        if (subWeapon == null)
+        if (splashBombWeaponBehaviour == null)
         {
-            subWeapon =
-                GetComponent<PlayerSubWeapon>();
-
-
-            if (subWeapon == null)
-            {
-                subWeapon =
-                    GetComponentInParent<
-                        PlayerSubWeapon
-                    >();
-            }
+            splashBombWeaponBehaviour =
+                transform.root
+                    .GetComponentInChildren<
+                        SplashBombWeaponBehaviour
+                    >(
+                        true
+                    );
         }
 
 
@@ -198,7 +206,7 @@ public class SplashBombChargeVFX : MonoBehaviour
 
     private void Update()
     {
-        if (subWeapon == null ||
+        if (splashBombWeaponBehaviour == null ||
             chargePoint == null)
         {
             return;
@@ -206,7 +214,8 @@ public class SplashBombChargeVFX : MonoBehaviour
 
 
         bool charging =
-            subWeapon.IsCharging;
+            splashBombWeaponBehaviour
+                .IsCharging;
 
 
         // ==========================================
@@ -236,21 +245,15 @@ public class SplashBombChargeVFX : MonoBehaviour
 
 
         if (!charging)
+        {
             return;
+        }
 
 
+        // 실제 SplashBomb의 충전량을 그대로 사용.
         float chargePercent =
-            Mathf.Clamp01(
-                (
-                    Time.time
-                    - chargeStartedTime
-                )
-                /
-                Mathf.Max(
-                    chargeBuildTime,
-                    0.01f
-                )
-            );
+            splashBombWeaponBehaviour
+                .Charge01;
 
 
         UpdateCenterRing(
@@ -270,10 +273,6 @@ public class SplashBombChargeVFX : MonoBehaviour
 
     private void BeginChargeVFX()
     {
-        chargeStartedTime =
-            Time.time;
-
-
         UpdateColors();
 
 
@@ -321,7 +320,6 @@ public class SplashBombChargeVFX : MonoBehaviour
 
 
         CreateCenterRing();
-
 
         CreateParticles();
     }
@@ -393,7 +391,8 @@ public class SplashBombChargeVFX : MonoBehaviour
             centerRing.sortingOrder =
                 referenceRenderer
                     .sortingOrder
-                + ringSortingOffset;
+                +
+                ringSortingOffset;
         }
     }
 
@@ -418,7 +417,8 @@ public class SplashBombChargeVFX : MonoBehaviour
             GameObject particleObject =
                 new GameObject(
                     "GatherParticle_"
-                    + i
+                    +
+                    i
                 );
 
 
@@ -465,7 +465,8 @@ public class SplashBombChargeVFX : MonoBehaviour
                 line.sortingOrder =
                     referenceRenderer
                         .sortingOrder
-                    + particleSortingOffset;
+                    +
+                    particleSortingOffset;
             }
 
 
@@ -517,7 +518,8 @@ public class SplashBombChargeVFX : MonoBehaviour
     {
         foreach (
             ChargeParticle particle
-            in particles)
+            in particles
+        )
         {
             particle.progress =
                 Random.Range(
@@ -540,34 +542,36 @@ public class SplashBombChargeVFX : MonoBehaviour
     // ==================================================
 
     private void UpdateParticles(
-        float chargePercent)
+        float chargePercent
+    )
     {
         foreach (
             ChargeParticle particle
-            in particles)
+            in particles
+        )
         {
             if (particle.line == null)
+            {
                 continue;
+            }
 
-
-            // ======================================
-            // 중심으로 들어오는 속도
-            // ======================================
 
             float currentSpeed =
                 gatherSpeed
-                + chargedSpeedBonus
-                * chargePercent;
+                +
+                chargedSpeedBonus
+                *
+                chargePercent;
 
 
             particle.progress +=
                 Time.deltaTime
-                * currentSpeed
-                * particle.speedMultiplier;
+                *
+                currentSpeed
+                *
+                particle.speedMultiplier;
 
 
-            // 중심에 도착하면
-            // 다시 바깥에서 나타남
             if (particle.progress >= 1f)
             {
                 particle.progress -=
@@ -589,10 +593,6 @@ public class SplashBombChargeVFX : MonoBehaviour
             }
 
 
-            // ======================================
-            // 바깥 → 안쪽
-            // ======================================
-
             float easedProgress =
                 EaseInCubic(
                     particle.progress
@@ -607,36 +607,37 @@ public class SplashBombChargeVFX : MonoBehaviour
                 );
 
 
-            // ======================================
-            // 살짝 휘면서 중심으로 들어감
-            // ======================================
-
             float angle =
                 particle.startAngle
-                + particle.progress
-                * swirlAmount;
+                +
+                particle.progress
+                *
+                swirlAmount;
 
 
             float radians =
                 angle
-                * Mathf.Deg2Rad;
+                *
+                Mathf.Deg2Rad;
 
 
             Vector2 center =
                 new Vector2(
-                    Mathf.Cos(radians),
-                    Mathf.Sin(radians)
+                    Mathf.Cos(
+                        radians
+                    ),
+                    Mathf.Sin(
+                        radians
+                    )
                 )
-                * radius;
+                *
+                radius;
 
-
-            // ======================================
-            // 중심에 가까울수록 작아짐
-            // ======================================
 
             float size =
                 particle.size
-                * Mathf.Lerp(
+                *
+                Mathf.Lerp(
                     1f,
                     0.25f,
                     particle.progress
@@ -647,11 +648,11 @@ public class SplashBombChargeVFX : MonoBehaviour
                 brightPlayerColor;
 
 
-            // 처음/끝에서 자연스럽게 Fade
             float alpha =
                 Mathf.Sin(
                     particle.progress
-                    * Mathf.PI
+                    *
+                    Mathf.PI
                 );
 
 
@@ -685,10 +686,13 @@ public class SplashBombChargeVFX : MonoBehaviour
         LineRenderer line,
         Vector2 center,
         float size,
-        Color color)
+        Color color
+    )
     {
         if (line == null)
+        {
             return;
+        }
 
 
         int segments =
@@ -704,7 +708,9 @@ public class SplashBombChargeVFX : MonoBehaviour
 
         line.startWidth =
             Mathf.Max(
-                size * 0.45f,
+                size
+                *
+                0.45f,
                 0.008f
             );
 
@@ -727,20 +733,27 @@ public class SplashBombChargeVFX : MonoBehaviour
         {
             float angle =
                 Mathf.PI
-                * 2f
-                * i
-                / segments;
+                *
+                2f
+                *
+                i
+                /
+                segments;
 
 
             Vector2 point =
                 center
-                + new Vector2(
+                +
+                new Vector2(
                     Mathf.Cos(angle)
-                        * size,
+                        *
+                        size,
 
                     Mathf.Sin(angle)
-                        * size
-                        * 0.65f
+                        *
+                        size
+                        *
+                        0.65f
                 );
 
 
@@ -757,22 +770,29 @@ public class SplashBombChargeVFX : MonoBehaviour
     // ==================================================
 
     private void UpdateCenterRing(
-        float chargePercent)
+        float chargePercent
+    )
     {
         if (centerRing == null)
+        {
             return;
+        }
 
 
         float pulse =
             Mathf.Sin(
                 Time.time
-                * ringPulseSpeed
+                *
+                ringPulseSpeed
             );
 
 
         pulse =
-            pulse * 0.5f
-            + 0.5f;
+            pulse
+            *
+            0.5f
+            +
+            0.5f;
 
 
         float radius =
@@ -785,7 +805,8 @@ public class SplashBombChargeVFX : MonoBehaviour
 
         radius +=
             pulse
-            * 0.015f;
+            *
+            0.015f;
 
 
         Color color =
@@ -797,18 +818,19 @@ public class SplashBombChargeVFX : MonoBehaviour
                 color,
                 Color.white,
                 chargePercent
-                * 0.20f
+                *
+                0.20f
             );
 
 
-        // 일부러 약하게
         color.a =
             Mathf.Lerp(
                 0.22f,
                 0.55f,
                 chargePercent
             )
-            * Mathf.Lerp(
+            *
+            Mathf.Lerp(
                 0.8f,
                 1f,
                 pulse
@@ -848,18 +870,23 @@ public class SplashBombChargeVFX : MonoBehaviour
         {
             float angle =
                 Mathf.PI
-                * 2f
-                * i
-                / segments;
+                *
+                2f
+                *
+                i
+                /
+                segments;
 
 
             Vector2 point =
                 new Vector2(
                     Mathf.Cos(angle)
-                        * radius,
+                        *
+                        radius,
 
                     Mathf.Sin(angle)
-                        * radius
+                        *
+                        radius
                 );
 
 
@@ -917,7 +944,8 @@ public class SplashBombChargeVFX : MonoBehaviour
     // ==================================================
 
     private void SetVFXVisible(
-        bool visible)
+        bool visible
+    )
     {
         if (runtimeRoot != null)
         {
@@ -933,9 +961,14 @@ public class SplashBombChargeVFX : MonoBehaviour
     // ==================================================
 
     private float EaseInCubic(
-        float t)
+        float t
+    )
     {
         return
-            t * t * t;
+            t
+            *
+            t
+            *
+            t;
     }
 }

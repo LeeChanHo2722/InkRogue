@@ -12,8 +12,9 @@ public class BossHealth : MonoBehaviour
     public int maxHealth = 120;
 
 
+    // 실제 Runtime HP는 소수점까지 저장
     [SerializeField]
-    private int currentHealth;
+    private float currentHealth;
 
 
     // ==================================================
@@ -43,6 +44,8 @@ public class BossHealth : MonoBehaviour
 
     // ==================================================
     // Events
+    //
+    // 기존 UI 호환을 위해 int 유지
     // ==================================================
 
     public event Action<int, int>
@@ -65,7 +68,15 @@ public class BossHealth : MonoBehaviour
     // Public
     // ==================================================
 
+    // 기존 코드 호환용
     public int CurrentHealth =>
+        Mathf.CeilToInt(
+            currentHealth
+        );
+
+
+    // 소수점까지 필요한 시스템용
+    public float CurrentHealthExact =>
         currentHealth;
 
 
@@ -89,7 +100,7 @@ public class BossHealth : MonoBehaviour
         maxHealth <= 0
             ? 0f
             : Mathf.Clamp01(
-                (float)currentHealth
+                currentHealth
                 / maxHealth
             );
 
@@ -115,21 +126,30 @@ public class BossHealth : MonoBehaviour
 
     // ==================================================
     // Damage
+    //
+    // int → float
     // ==================================================
 
     public void TakeDamage(
-        int damage)
+        float damage
+    )
     {
         if (isDead)
+        {
             return;
+        }
 
 
         if (isInvulnerable)
+        {
             return;
+        }
 
 
-        if (damage <= 0)
+        if (damage <= 0f)
+        {
             return;
+        }
 
 
         currentHealth -=
@@ -138,7 +158,7 @@ public class BossHealth : MonoBehaviour
 
         currentHealth =
             Mathf.Max(
-                0,
+                0f,
                 currentHealth
             );
 
@@ -146,8 +166,9 @@ public class BossHealth : MonoBehaviour
         BossHit?.Invoke();
 
 
+        // 기존 UI에는 올림된 정수 HP 전달
         HealthChanged?.Invoke(
-            currentHealth,
+            CurrentHealth,
             maxHealth
         );
 
@@ -156,7 +177,7 @@ public class BossHealth : MonoBehaviour
         // Death
         // ==========================================
 
-        if (currentHealth <= 0)
+        if (currentHealth <= 0f)
         {
             Die();
 
@@ -235,7 +256,8 @@ public class BossHealth : MonoBehaviour
     // ==================================================
 
     public void SetInvulnerable(
-        bool value)
+        bool value
+    )
     {
         isInvulnerable =
             value;
@@ -249,7 +271,9 @@ public class BossHealth : MonoBehaviour
     private void Die()
     {
         if (isDead)
+        {
             return;
+        }
 
 
         isDead =
@@ -257,7 +281,7 @@ public class BossHealth : MonoBehaviour
 
 
         currentHealth =
-            0;
+            0f;
 
 
         isInvulnerable =
@@ -265,7 +289,7 @@ public class BossHealth : MonoBehaviour
 
 
         HealthChanged?.Invoke(
-            currentHealth,
+            0,
             maxHealth
         );
 

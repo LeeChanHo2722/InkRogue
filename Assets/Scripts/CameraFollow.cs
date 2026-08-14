@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
@@ -88,6 +89,7 @@ public class CameraFollow : MonoBehaviour
 
     private Camera cam;
 
+    private bool cinematicMode = false;
 
     private float shakeTimer = 0f;
 
@@ -183,6 +185,9 @@ public class CameraFollow : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (cinematicMode)
+            return;
+
         if (player == null ||
             boundsTilemap == null ||
             cam == null)
@@ -714,5 +719,137 @@ public class CameraFollow : MonoBehaviour
 
 
         return targetPosition;
+    }
+    public void BeginCinematicMode()
+    {
+        cinematicMode = true;
+
+        // 기존 SmoothDamp 속도가 남아있지 않게 초기화
+        velocity = Vector3.zero;
+    }
+
+
+    public void EndCinematicMode()
+    {
+        cinematicMode = false;
+
+        velocity = Vector3.zero;
+
+        // 현재 카메라 위치에서 자연스럽게 추적 재개
+        followPosition = transform.position;
+    }
+
+
+    public IEnumerator MoveToPlayerRealtime(
+    float duration
+)
+    {
+        if (player == null)
+            yield break;
+
+        cinematicMode = true;
+
+
+        // ==========================================
+        // 시작 위치
+        // ==========================================
+
+        Vector3 startPosition =
+            transform.position;
+
+
+        // ==========================================
+        // 일반 CameraFollow와 동일한 최종 위치
+        //
+        // Player 중심뿐만 아니라
+        // 현재 Mouse Look Ahead까지 포함
+        // ==========================================
+
+        Vector3 lookAheadOffset =
+            CalculateLookAhead();
+
+
+        Vector3 targetPosition =
+            player.position
+            + lookAheadOffset;
+
+
+        targetPosition.z =
+            cameraZ;
+
+
+        targetPosition =
+            ClampToMapBounds(
+                targetPosition
+            );
+
+
+        // ==========================================
+        // Camera 이동
+        // ==========================================
+
+        float timer = 0f;
+
+        float safeDuration =
+            Mathf.Max(
+                duration,
+                0.01f
+            );
+
+
+        while (timer < safeDuration)
+        {
+            timer +=
+                Time.unscaledDeltaTime;
+
+
+            float t =
+                Mathf.Clamp01(
+                    timer / safeDuration
+                );
+
+
+            // SmoothStep
+            float eased =
+                t * t
+                * (3f - 2f * t);
+
+
+            Vector3 position =
+                Vector3.Lerp(
+                    startPosition,
+                    targetPosition,
+                    eased
+                );
+
+
+            position =
+                ClampToMapBounds(
+                    position
+                );
+
+
+            transform.position =
+                position;
+
+
+            yield return null;
+        }
+
+
+        // ==========================================
+        // 최종 위치 확정
+        // ==========================================
+
+        transform.position =
+            targetPosition;
+
+
+        followPosition =
+            targetPosition;
+
+
+        velocity =
+            Vector3.zero;
     }
 }
