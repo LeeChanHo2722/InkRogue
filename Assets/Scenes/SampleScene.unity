@@ -13849,7 +13849,7 @@ MonoBehaviour:
     weapon: {fileID: 11400000, guid: 9b182a3d52c679147b47c1468ed3ccc0, type: 2}
     forcedHand: 0
   leftSlot:
-    weapon: {fileID: 11400000, guid: f2bdf56fb01692c4fa1ab6f9501bdc8b, type: 2}
+    weapon: {fileID: 11400000, guid: 9b182a3d52c679147b47c1468ed3ccc0, type: 2}
     forcedHand: 0
   rightUsePoint: {fileID: 404157816}
   leftUsePoint: {fileID: 1934422578}
@@ -27935,89 +27935,10 @@ MonoBehaviour:
   - {fileID: 870542163}
   - {fileID: 1471023725}
   - {fileID: 1350675858}
-  floors:
-  - waves:
-    - enemies:
-      - enemyType: 0
-        count: 2
-      - enemyType: 4
-        count: 2
-      maxWaveDuration: 20
-      killRatioToAdvance: 0.667
-    - enemies:
-      - enemyType: 0
-        count: 2
-      - enemyType: 1
-        count: 1
-      - enemyType: 4
-        count: 2
-      maxWaveDuration: 20
-      killRatioToAdvance: 0.667
-    - enemies:
-      - enemyType: 0
-        count: 2
-      - enemyType: 3
-        count: 1
-      - enemyType: 1
-        count: 1
-      maxWaveDuration: 20
-      killRatioToAdvance: 0.667
-  - waves:
-    - enemies:
-      - enemyType: 0
-        count: 2
-      - enemyType: 2
-        count: 1
-      - enemyType: 1
-        count: 2
-      maxWaveDuration: 20
-      killRatioToAdvance: 0.667
-    - enemies:
-      - enemyType: 0
-        count: 3
-      - enemyType: 4
-        count: 2
-      - enemyType: 2
-        count: 2
-      maxWaveDuration: 20
-      killRatioToAdvance: 0.667
-    - enemies:
-      - enemyType: 1
-        count: 2
-      - enemyType: 3
-        count: 2
-      - enemyType: 4
-        count: 2
-      maxWaveDuration: 20
-      killRatioToAdvance: 0.667
-  - waves:
-    - enemies:
-      - enemyType: 0
-        count: 6
-      - enemyType: 1
-        count: 2
-      - enemyType: 4
-        count: 2
-      maxWaveDuration: 20
-      killRatioToAdvance: 0.667
-    - enemies:
-      - enemyType: 2
-        count: 3
-      - enemyType: 0
-        count: 3
-      - enemyType: 3
-        count: 2
-      maxWaveDuration: 20
-      killRatioToAdvance: 0.667
-    - enemies:
-      - enemyType: 2
-        count: 4
-      - enemyType: 3
-        count: 3
-      - enemyType: 1
-        count: 3
-      maxWaveDuration: 20
-      killRatioToAdvance: 0.667
+  floorDefinitions:
+  - {fileID: 11400000, guid: c8326c3ecfb7c0249acf4eb810a3d231, type: 2}
+  - {fileID: 11400000, guid: d7dae8d7053df7240b1bf180d0da47e6, type: 2}
+  - {fileID: 11400000, guid: b1ce7d8796c58a840b5c5f553929b935, type: 2}
   floorClearText: {fileID: 1001127657}
   waveText: {fileID: 0}
   waveStartUI: {fileID: 1624223005}
