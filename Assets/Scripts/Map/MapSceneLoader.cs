@@ -11,6 +11,9 @@ public class MapSceneLoader : MonoBehaviour
     [SerializeField]
     private FloorTransitionManager floorTransitionManager;
 
+    [SerializeField]
+    private BossArenaTransitionManager bossArenaTransitionManager;
+
     private bool loadStarted =
         false;
 
@@ -32,6 +35,19 @@ public class MapSceneLoader : MonoBehaviour
             Debug.LogError(
                 "MapSceneLoader requires "
                 + "FloorTransitionManager.",
+                this
+            );
+
+
+            return;
+        }
+
+
+        if (bossArenaTransitionManager == null)
+        {
+            Debug.LogError(
+                "MapSceneLoader requires "
+                + "BossArenaTransitionManager.",
                 this
             );
 
@@ -117,7 +133,24 @@ public class MapSceneLoader : MonoBehaviour
         }
 
 
+        if (!SceneManager.SetActiveScene(mapScene))
+        {
+            Debug.LogError(
+                "MapSceneLoader failed to set active Scene '"
+                + mapSceneName
+                + "'.",
+                this
+            );
+
+
+            yield break;
+        }
+
+
         MapSceneReferences mapReferences =
+            null;
+
+        BossSceneReferences bossReferences =
             null;
 
 
@@ -127,17 +160,35 @@ public class MapSceneLoader : MonoBehaviour
 
         for (int i = 0; i < rootObjects.Length; i++)
         {
-            mapReferences =
-                rootObjects[i]
-                    .GetComponentInChildren<
-                        MapSceneReferences
-                    >(
-                        true
-                    );
+            if (mapReferences == null)
+            {
+                mapReferences =
+                    rootObjects[i]
+                        .GetComponentInChildren<
+                            MapSceneReferences
+                        >(
+                            true
+                        );
+            }
 
 
-            if (mapReferences != null)
+            if (bossReferences == null)
+            {
+                bossReferences =
+                    rootObjects[i]
+                        .GetComponentInChildren<
+                            BossSceneReferences
+                        >(
+                            true
+                        );
+            }
+
+
+            if (mapReferences != null &&
+                bossReferences != null)
+            {
                 break;
+            }
         }
 
 
@@ -156,10 +207,11 @@ public class MapSceneLoader : MonoBehaviour
         }
 
 
-        if (!SceneManager.SetActiveScene(mapScene))
+        if (bossReferences == null)
         {
             Debug.LogError(
-                "MapSceneLoader failed to set active Scene '"
+                "MapSceneLoader could not find "
+                + "BossSceneReferences in Scene '"
                 + mapSceneName
                 + "'.",
                 this
@@ -177,6 +229,23 @@ public class MapSceneLoader : MonoBehaviour
             Debug.LogError(
                 "MapSceneLoader failed to bind "
                 + "MapSceneReferences for Scene '"
+                + mapSceneName
+                + "'.",
+                this
+            );
+
+
+            yield break;
+        }
+
+
+        if (!bossArenaTransitionManager.BindBossReferences(
+                bossReferences
+            ))
+        {
+            Debug.LogError(
+                "MapSceneLoader failed to bind "
+                + "BossSceneReferences for Scene '"
                 + mapSceneName
                 + "'.",
                 this
