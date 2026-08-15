@@ -38,6 +38,11 @@ public class FloorManager : MonoBehaviour
     public FloorDefinition[] floorDefinitions;
 
 
+    [Header("Run")]
+
+    public RunManager runManager;
+
+
     // ==================================================
     // UI / Managers
     // ==================================================
@@ -58,21 +63,8 @@ public class FloorManager : MonoBehaviour
 
 
     // ==================================================
-    // Floor
-    // ==================================================
-
-    [Header("Floor")]
-
-    public int maxFloor = 3;
-
-
-    // ==================================================
     // Runtime - Floor
     // ==================================================
-
-    private int currentFloor =
-        1;
-
 
     private int remainingEnemies =
         0;
@@ -115,7 +107,7 @@ public class FloorManager : MonoBehaviour
     // ==================================================
 
     public int CurrentFloor =>
-        currentFloor;
+        runManager.CurrentFloor;
 
 
     public int RemainingEnemies =>
@@ -150,6 +142,19 @@ public class FloorManager : MonoBehaviour
 
     private void Awake()
     {
+        if (runManager == null)
+        {
+            Debug.LogError(
+                "FloorManager requires an assigned "
+                + "RunManager reference.",
+                this
+            );
+
+
+            return;
+        }
+
+
         floorObjective =
             GetComponent<FloorObjective>();
 
@@ -370,7 +375,7 @@ public class FloorManager : MonoBehaviour
         {
             Debug.LogError(
                 "FLOOR "
-                + currentFloor
+                + CurrentFloor
                 + " Wave Data가 없습니다."
             );
 
@@ -384,7 +389,7 @@ public class FloorManager : MonoBehaviour
         {
             Debug.LogError(
                 "FLOOR "
-                + currentFloor
+                + CurrentFloor
                 + "에 Wave가 없습니다."
             );
 
@@ -419,7 +424,7 @@ public class FloorManager : MonoBehaviour
 
         Debug.Log(
             "FLOOR "
-            + currentFloor
+            + CurrentFloor
             + " START"
         );
 
@@ -494,7 +499,7 @@ public class FloorManager : MonoBehaviour
 
         Debug.Log(
             "FLOOR "
-            + currentFloor
+            + CurrentFloor
             + " | WAVE "
             + (currentWaveIndex + 1)
             + " START"
@@ -777,7 +782,7 @@ public class FloorManager : MonoBehaviour
         GetCurrentFloorData()
     {
         int index =
-            currentFloor - 1;
+            CurrentFloor - 1;
 
 
         if (floorDefinitions == null ||
@@ -860,12 +865,11 @@ public class FloorManager : MonoBehaviour
         // → Boss Arena
         // ==========================================
 
-        if (currentFloor >=
-            maxFloor)
+        if (runManager.IsLastFloor)
         {
             Debug.Log(
                 "FLOOR "
-                + currentFloor
+                + CurrentFloor
                 + " CLEAR"
                 + " → BOSS ARENA"
             );
@@ -897,7 +901,7 @@ public class FloorManager : MonoBehaviour
         {
             floorClearText.text =
                 "FLOOR "
-                + currentFloor
+                + CurrentFloor
                 + " CLEAR";
 
 
@@ -909,7 +913,7 @@ public class FloorManager : MonoBehaviour
 
         Debug.Log(
             "FLOOR "
-            + currentFloor
+            + CurrentFloor
             + " CLEAR!"
         );
 
@@ -928,8 +932,7 @@ public class FloorManager : MonoBehaviour
 
     public void AdvanceFloor()
     {
-        currentFloor++;
-
+        runManager.AdvanceFloor();
     }
 
 
