@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -31,13 +30,12 @@ public class FloorManager : MonoBehaviour
 
 
     // ==================================================
-    // Floor Wave Data
+    // Floor Definitions
     // ==================================================
 
-    [Header("Floor Wave Data")]
+    [Header("Floor Definitions")]
 
-    public List<FloorWaveData> floors =
-        new List<FloorWaveData>();
+    public FloorDefinition[] floorDefinitions;
 
 
     // ==================================================
@@ -782,19 +780,21 @@ public class FloorManager : MonoBehaviour
             currentFloor - 1;
 
 
-        if (floors == null)
-            return null;
-
-
-        if (index < 0 ||
-            index >= floors.Count)
+        if (floorDefinitions == null ||
+            index < 0 ||
+            index >= floorDefinitions.Length)
         {
             return null;
         }
 
 
-        return
-            floors[index];
+        FloorDefinition floorDefinition =
+            floorDefinitions[index];
+
+
+        return floorDefinition != null
+            ? floorDefinition.floorData
+            : null;
     }
 
 
