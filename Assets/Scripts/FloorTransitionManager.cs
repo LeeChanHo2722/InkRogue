@@ -212,21 +212,25 @@ public class FloorTransitionManager : MonoBehaviour
     {
         if (mapReferences != null)
         {
-            BindMapReferences(
-                mapReferences
-            );
+            bool mapBindingSucceeded =
+                BindMapReferences(
+                    mapReferences
+                );
+
+
+            if (autoStartFirstFloor &&
+                mapBindingSucceeded)
+            {
+                BeginFirstFloor();
+            }
         }
-        else
+        else if (autoStartFirstFloor)
         {
             Debug.LogError(
                 "FloorTransitionManager requires "
                 + "MapSceneReferences.",
                 this
             );
-        }
-        if (autoStartFirstFloor)
-        {
-            BeginFirstFloor();
         }
     }
 
@@ -258,7 +262,7 @@ public class FloorTransitionManager : MonoBehaviour
     // Map Binding
     // ==================================================
 
-    public void BindMapReferences(
+    public bool BindMapReferences(
         MapSceneReferences mapReferences)
     {
         if (mapReferences == null)
@@ -269,22 +273,66 @@ public class FloorTransitionManager : MonoBehaviour
             );
 
 
-            return;
+            return false;
         }
 
 
-        if (floorManager != null)
+        if (floorManager == null)
         {
-            floorManager.BindMapReferences(
-                mapReferences
+            Debug.LogError(
+                "FloorTransitionManager requires "
+                + "FloorManager.",
+                this
             );
+
+
+            return false;
         }
 
 
-        if (mapReferences.playerSpawnPoint != null)
+        if (mapReferences.enemySpawnPoints == null ||
+            mapReferences.enemySpawnPoints.Length == 0)
         {
-            playerSpawnPoint =
-                mapReferences.playerSpawnPoint;
+            Debug.LogError(
+                "MapSceneReferences requires Enemy "
+                + "Spawn Points.",
+                this
+            );
+
+
+            return false;
+        }
+
+
+        for (int i = 0;
+             i < mapReferences.enemySpawnPoints.Length;
+             i++)
+        {
+            if (mapReferences.enemySpawnPoints[i] != null)
+                continue;
+
+
+            Debug.LogError(
+                "MapSceneReferences contains a null "
+                + "Enemy Spawn Point.",
+                this
+            );
+
+
+            return false;
+        }
+
+
+        if (mapReferences.playerSpawnPoint == null)
+        {
+            Debug.LogError(
+                "MapSceneReferences requires a Player "
+                + "Spawn Point.",
+                this
+            );
+
+
+            return false;
         }
 
 
@@ -295,6 +343,9 @@ public class FloorTransitionManager : MonoBehaviour
                 + "Tilemap.",
                 this
             );
+
+
+            return false;
         }
         else if (InkMap.Instance == null)
         {
@@ -302,12 +353,9 @@ public class FloorTransitionManager : MonoBehaviour
                 "FloorTransitionManager requires InkMap.",
                 this
             );
-        }
-        else
-        {
-            InkMap.Instance.SwitchGroundTilemap(
-                mapReferences.groundTilemap
-            );
+
+
+            return false;
         }
 
 
@@ -318,6 +366,9 @@ public class FloorTransitionManager : MonoBehaviour
                 + "Bounds Tilemap.",
                 this
             );
+
+
+            return false;
         }
         else if (cameraFollow == null)
         {
@@ -326,13 +377,32 @@ public class FloorTransitionManager : MonoBehaviour
                 + "CameraFollow.",
                 this
             );
+
+
+            return false;
         }
-        else
-        {
-            cameraFollow.SwitchBoundsTilemap(
-                mapReferences.cameraBoundsTilemap
-            );
-        }
+
+
+        floorManager.BindMapReferences(
+            mapReferences
+        );
+
+
+        playerSpawnPoint =
+            mapReferences.playerSpawnPoint;
+
+
+        InkMap.Instance.SwitchGroundTilemap(
+            mapReferences.groundTilemap
+        );
+
+
+        cameraFollow.SwitchBoundsTilemap(
+            mapReferences.cameraBoundsTilemap
+        );
+
+
+        return true;
     }
 
 
