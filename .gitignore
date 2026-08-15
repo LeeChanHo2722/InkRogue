@@ -35,3 +35,4 @@ UpgradeLog*.htm
 
 # Graphify generated output
 graphify-out/
+graphify-out.meta
