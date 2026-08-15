@@ -262,6 +262,30 @@ public class FloorTransitionManager : MonoBehaviour
     // Map Binding
     // ==================================================
 
+    public bool SetRespawnPoint(
+        Transform respawnPoint)
+    {
+        if (respawnPoint == null)
+        {
+            Debug.LogError(
+                "FloorTransitionManager requires a valid "
+                + "Player Respawn Point.",
+                this
+            );
+
+
+            return false;
+        }
+
+
+        playerSpawnPoint =
+            respawnPoint;
+
+
+        return true;
+    }
+
+
     public bool BindMapReferences(
         MapSceneReferences mapReferences)
     {
@@ -383,13 +407,17 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
+        if (!SetRespawnPoint(
+                mapReferences.playerSpawnPoint
+            ))
+        {
+            return false;
+        }
+
+
         floorManager.BindMapReferences(
             mapReferences
         );
-
-
-        playerSpawnPoint =
-            mapReferences.playerSpawnPoint;
 
 
         InkMap.Instance.SwitchGroundTilemap(

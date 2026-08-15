@@ -12,7 +12,7 @@ public class BossBattleManager : MonoBehaviour
 
     public GameObject bossPrefab;
 
-    public Transform bossSpawnPoint;
+    private Transform bossSpawnPoint;
 
 
     // ==================================================
@@ -60,7 +60,7 @@ public class BossBattleManager : MonoBehaviour
 
     public GameObject bomberPrefab;
 
-    public Transform[] addSpawnPoints;
+    private Transform[] addSpawnPoints;
 
 
     [Tooltip(
@@ -149,6 +149,8 @@ public class BossBattleManager : MonoBehaviour
 
     private bool bossDeathRunning = false;
 
+    private bool bossReferencesBound = false;
+
 
     private readonly List<GameObject>
         spawnedAdds =
@@ -160,11 +162,105 @@ public class BossBattleManager : MonoBehaviour
 
 
     // ==================================================
+    // Boss Binding
+    // ==================================================
+
+    public bool BindBossReferences(
+        BossSceneReferences bossReferences)
+    {
+        if (bossReferences == null)
+        {
+            Debug.LogError(
+                "BossBattleManager requires "
+                + "BossSceneReferences.",
+                this
+            );
+
+
+            return false;
+        }
+
+
+        if (bossReferences.bossSpawnPoint == null)
+        {
+            Debug.LogError(
+                "BossSceneReferences requires a Boss "
+                + "Spawn Point.",
+                this
+            );
+
+
+            return false;
+        }
+
+
+        if (bossReferences.addSpawnPoints == null ||
+            bossReferences.addSpawnPoints.Length == 0)
+        {
+            Debug.LogError(
+                "BossSceneReferences requires Add "
+                + "Spawn Points.",
+                this
+            );
+
+
+            return false;
+        }
+
+
+        for (int i = 0;
+             i < bossReferences.addSpawnPoints.Length;
+             i++)
+        {
+            if (bossReferences.addSpawnPoints[i] != null)
+                continue;
+
+
+            Debug.LogError(
+                "BossSceneReferences contains a null "
+                + "Add Spawn Point.",
+                this
+            );
+
+
+            return false;
+        }
+
+
+        bossSpawnPoint =
+            bossReferences.bossSpawnPoint;
+
+        addSpawnPoints =
+            bossReferences.addSpawnPoints;
+
+
+        bossReferencesBound =
+            true;
+
+
+        return true;
+    }
+
+
+    // ==================================================
     // Intro + Spawn
     // ==================================================
 
     public IEnumerator StartBossBattleRoutine()
     {
+        if (!bossReferencesBound)
+        {
+            Debug.LogError(
+                "BossBattleManager cannot start before "
+                + "BossSceneReferences binding succeeds.",
+                this
+            );
+
+
+            yield break;
+        }
+
+
         yield return
             new WaitForSecondsRealtime(
                 arenaHoldDuration
