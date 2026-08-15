@@ -17,6 +17,9 @@ public class FloorTransitionManager : MonoBehaviour
 
     public FloorStartTitleUI floorStartTitleUI;
 
+    [SerializeField]
+    private MapSceneReferences mapReferences;
+
 
     // ==================================================
     // Player
@@ -66,16 +69,7 @@ public class FloorTransitionManager : MonoBehaviour
         0.08f;
 
 
-    // ==================================================
-    // Spawn Position
-    // ==================================================
-
-    [Header("Floor Spawn Position")]
-
-    [Tooltip(
-        "각 Floor 시작 시 Player가 이동할 위치"
-    )]
-    public Transform playerSpawnPoint;
+    private Transform playerSpawnPoint;
 
 
     // ==================================================
@@ -207,12 +201,110 @@ public class FloorTransitionManager : MonoBehaviour
 
     private void Start()
     {
+        if (mapReferences != null)
+        {
+            BindMapReferences(
+                mapReferences
+            );
+        }
+        else
+        {
+            Debug.LogError(
+                "FloorTransitionManager requires "
+                + "MapSceneReferences.",
+                this
+            );
+        }
+
+
         RestoreTimeScale();
 
 
         StartCoroutine(
             StartFirstFloorRoutine()
         );
+    }
+
+
+    // ==================================================
+    // Map Binding
+    // ==================================================
+
+    public void BindMapReferences(
+        MapSceneReferences mapReferences)
+    {
+        if (mapReferences == null)
+        {
+            Debug.LogError(
+                "FloorTransitionManager requires "
+                + "MapSceneReferences."
+            );
+
+
+            return;
+        }
+
+
+        if (floorManager != null)
+        {
+            floorManager.BindMapReferences(
+                mapReferences
+            );
+        }
+
+
+        if (mapReferences.playerSpawnPoint != null)
+        {
+            playerSpawnPoint =
+                mapReferences.playerSpawnPoint;
+        }
+
+
+        if (mapReferences.groundTilemap == null)
+        {
+            Debug.LogError(
+                "MapSceneReferences requires a Ground "
+                + "Tilemap.",
+                this
+            );
+        }
+        else if (InkMap.Instance == null)
+        {
+            Debug.LogError(
+                "FloorTransitionManager requires InkMap.",
+                this
+            );
+        }
+        else
+        {
+            InkMap.Instance.SwitchGroundTilemap(
+                mapReferences.groundTilemap
+            );
+        }
+
+
+        if (mapReferences.cameraBoundsTilemap == null)
+        {
+            Debug.LogError(
+                "MapSceneReferences requires a Camera "
+                + "Bounds Tilemap.",
+                this
+            );
+        }
+        else if (cameraFollow == null)
+        {
+            Debug.LogError(
+                "FloorTransitionManager requires "
+                + "CameraFollow.",
+                this
+            );
+        }
+        else
+        {
+            cameraFollow.SwitchBoundsTilemap(
+                mapReferences.cameraBoundsTilemap
+            );
+        }
     }
 
 
@@ -874,8 +966,9 @@ public class FloorTransitionManager : MonoBehaviour
         if (playerSpawnPoint == null)
         {
             Debug.LogError(
-                "FloorTransitionManager: "
-                + "Player Spawn Point가 연결되지 않았습니다."
+                "FloorTransitionManager requires a player "
+                + "spawn point from MapSceneReferences.",
+                this
             );
 
 

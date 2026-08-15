@@ -54,9 +54,10 @@ public class InkMap : MonoBehaviour
     // Map
     // ==================================================
 
-    [Header("Map")]
+    private Tilemap groundTilemap;
 
-    public Tilemap groundTilemap;
+
+    [Header("Map")]
 
     [Tooltip("¿ùµå 1Ä­´ç Ink Texture ÇÈ¼¿ ¼ö")]
     public int pixelsPerUnit = 16;
@@ -175,7 +176,11 @@ public class InkMap : MonoBehaviour
 
     private void Start()
     {
-        CreateInkMap();
+        if (groundTilemap != null &&
+            !IsReady)
+        {
+            CreateInkMap();
+        }
     }
 
 
