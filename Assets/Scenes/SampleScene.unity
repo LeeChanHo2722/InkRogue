@@ -379,6 +379,7 @@ MonoBehaviour:
   respawnCoveredHoldDuration: 0.5
   playerSpawnDelay: 0.5
   enemySpawnDelay: 0.08
+  autoStartFirstFloor: 1
 --- !u!4 &25947624
 Transform:
   m_ObjectHideFlags: 0
@@ -5022,6 +5023,7 @@ Transform:
   - {fileID: 170533617}
   - {fileID: 1836400092}
   - {fileID: 1883429584}
+  - {fileID: 1363806858}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &404157815
@@ -5808,12 +5810,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 519518129}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -10.57, y: 7.01, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -11.76911, y: 8.07366, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1972656045}
+  m_Father: {fileID: 1363806858}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &519518131
 MonoBehaviour:
@@ -6277,7 +6279,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BossBattleManager
   bossPrefab: {fileID: 1002510439881127441, guid: 3b897caaecc5f3b4ca9a6b3d67124921,
     type: 3}
-  bossSpawnPoint: {fileID: 385099644}
   bossIntroUI: {fileID: 508891007}
   bossHealthUI: {fileID: 15895505}
   resultUI: {fileID: 1236394095}
@@ -6289,11 +6290,6 @@ MonoBehaviour:
     type: 3}
   bomberPrefab: {fileID: 174283713666926076, guid: e8c6ddbb197c142429f13be8742f00d0,
     type: 3}
-  addSpawnPoints:
-  - {fileID: 1642302476}
-  - {fileID: 1816751641}
-  - {fileID: 1399485827}
-  - {fileID: 845706287}
   firstAddDelay: 9
   addSpawnInterval: 15
   shooterCountPerWave: 1
@@ -10065,12 +10061,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 870542162}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -10.44, y: -10.07, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -11.63911, y: -9.00634, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1972656045}
+  m_Father: {fileID: 1363806858}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &870542164
 MonoBehaviour:
@@ -10328,12 +10324,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 959297426}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.32, y: 7.16, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.12089002, y: 8.2236595, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1972656045}
+  m_Father: {fileID: 1363806858}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &959297428
 MonoBehaviour:
@@ -12267,12 +12263,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1350675857}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 13.09, y: -10.44, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 11.89089, y: -9.37634, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1972656045}
+  m_Father: {fileID: 1363806858}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1350675859
 MonoBehaviour:
@@ -12504,6 +12500,43 @@ MonoBehaviour:
   unselectedAlpha: 0.28
   focusDuration: 0.18
   holdDuration: 0.22
+--- !u!1 &1363806857
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1363806858}
+  m_Layer: 0
+  m_Name: EnemySpawnPoints
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1363806858
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1363806857}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 519518130}
+  - {fileID: 959297427}
+  - {fileID: 1688036278}
+  - {fileID: 870542163}
+  - {fileID: 1471023725}
+  - {fileID: 1350675858}
+  m_Father: {fileID: 399482088}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1396465264
 GameObject:
   m_ObjectHideFlags: 0
@@ -13094,14 +13127,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0bda8bc7145d6e64496926be83bca5a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossArenaTransitionManager
-  normalArenaRoot: {fileID: 399482086}
-  bossArenaRoot: {fileID: 888727815}
-  bossGround: {fileID: 1506144946}
-  bossCameraBounds: {fileID: 713459781}
-  bossPlayerSpawnPoint: {fileID: 1666625896}
-  bossSpawnPoint: {fileID: 385099644}
   bossBattleManager: {fileID: 596167280}
+  bossSceneReferences: {fileID: 1882324213}
   screenWipe: {fileID: 703787618}
+  floorTransitionManager: {fileID: 25947623}
   floorClearHold: 0.5
   revealEndHold: 0.15
   cameraFollow: {fileID: 519420033}
@@ -13288,12 +13317,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1471023724}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.29, y: -10.27, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.09088993, y: -9.206341, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1972656045}
+  m_Father: {fileID: 1363806858}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1471023726
 MonoBehaviour:
@@ -25362,8 +25391,7 @@ Transform:
   m_LocalPosition: {x: -1.19911, y: 1.06366, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1972656045}
+  m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1688036277
@@ -25391,12 +25419,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1688036277}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 13.25, y: 7.12, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 12.05089, y: 8.18366, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1972656045}
+  m_Father: {fileID: 1363806858}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1688036279
 MonoBehaviour:
@@ -37871,6 +37899,61 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1880195154}
   m_CullTransparentMesh: 1
+--- !u!1 &1882324212
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1882324214}
+  - component: {fileID: 1882324213}
+  m_Layer: 0
+  m_Name: BossSceneReferences
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1882324213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1882324212}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9af7c4e8b32a2841a45f1b88794b647, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossSceneReferences
+  normalArenaRoot: {fileID: 399482086}
+  bossArenaRoot: {fileID: 888727815}
+  bossGround: {fileID: 1506144946}
+  bossCameraBounds: {fileID: 713459781}
+  bossPlayerSpawnPoint: {fileID: 1666625896}
+  bossSpawnPoint: {fileID: 385099644}
+  addSpawnPoints:
+  - {fileID: 1642302476}
+  - {fileID: 1816751641}
+  - {fileID: 1399485827}
+  - {fileID: 845706287}
+--- !u!4 &1882324214
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1882324212}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.08555, y: -0.56015, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1883429583
 GameObject:
   m_ObjectHideFlags: 0
@@ -38597,43 +38680,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1971775257}
   m_CullTransparentMesh: 1
---- !u!1 &1972656044
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1972656045}
-  m_Layer: 0
-  m_Name: SpawnPoints
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1972656045
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1972656044}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 519518130}
-  - {fileID: 959297427}
-  - {fileID: 1688036278}
-  - {fileID: 870542163}
-  - {fileID: 1471023725}
-  - {fileID: 1350675858}
-  m_Father: {fileID: 1676118674}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2012297513
 GameObject:
   m_ObjectHideFlags: 0
@@ -40158,3 +40204,4 @@ SceneRoots:
   - {fileID: 45596326}
   - {fileID: 830335035}
   - {fileID: 972143168}
+  - {fileID: 1882324214}

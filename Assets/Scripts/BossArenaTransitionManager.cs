@@ -8,35 +8,28 @@ public class BossArenaTransitionManager : MonoBehaviour
     // Arena
     // ==================================================
 
-    [Header("Arena")]
+    private GameObject normalArenaRoot;
 
-    [Tooltip("기존 Floor 1~3 Grid")]
-    public GameObject normalArenaRoot;
+    private GameObject bossArenaRoot;
 
-    [Tooltip("새 BossGrid")]
-    public GameObject bossArenaRoot;
+    private Tilemap bossGround;
 
-    [Tooltip("BossGrid 안의 BossGround")]
-    public Tilemap bossGround;
-
-    [Tooltip("Boss Camera 제한에 사용할 BossWalls")]
-    public Tilemap bossCameraBounds;
+    private Tilemap bossCameraBounds;
 
 
     // ==================================================
     // Boss Spawn
     // ==================================================
 
-    [Header("Boss Spawn")]
-
-    public Transform bossPlayerSpawnPoint;
-
-    public Transform bossSpawnPoint;
+    private Transform bossPlayerSpawnPoint;
 
 
     [Header("Boss Battle")]
 
     public BossBattleManager bossBattleManager;
+
+    [SerializeField]
+    private BossSceneReferences bossSceneReferences;
 
 
     // ==================================================
@@ -46,6 +39,9 @@ public class BossArenaTransitionManager : MonoBehaviour
     [Header("Transition")]
 
     public InkScreenWipe screenWipe;
+
+    [SerializeField]
+    private FloorTransitionManager floorTransitionManager;
 
     public float floorClearHold =
         0.50f;
@@ -102,6 +98,9 @@ public class BossArenaTransitionManager : MonoBehaviour
     private bool weaponInputWasEnabled;
 
 
+    private BossSceneReferences boundBossReferences;
+
+
     public bool IsTransitionRunning =>
         transitionRunning;
 
@@ -132,6 +131,119 @@ public class BossArenaTransitionManager : MonoBehaviour
 
     private void Start()
     {
+        if (bossSceneReferences == null)
+        {
+            return;
+        }
+
+
+        if (!BindBossReferences(
+                bossSceneReferences
+            ))
+        {
+            Debug.LogError(
+                "BossArenaTransitionManager failed to bind "
+                + "BossSceneReferences.",
+                this
+            );
+        }
+    }
+
+
+    // ==================================================
+    // Boss Binding
+    // ==================================================
+
+    public bool BindBossReferences(
+        BossSceneReferences bossReferences)
+    {
+        if (bossReferences == null)
+        {
+            Debug.LogError(
+                "BossArenaTransitionManager requires "
+                + "BossSceneReferences.",
+                this
+            );
+
+
+            return false;
+        }
+
+
+        if (bossReferences.normalArenaRoot == null ||
+            bossReferences.bossArenaRoot == null ||
+            bossReferences.bossGround == null ||
+            bossReferences.bossCameraBounds == null ||
+            bossReferences.bossPlayerSpawnPoint == null ||
+            bossReferences.bossSpawnPoint == null)
+        {
+            Debug.LogError(
+                "BossSceneReferences requires all arena, "
+                + "Tilemap, and spawn references.",
+                this
+            );
+
+
+            return false;
+        }
+
+
+        if (bossBattleManager == null)
+        {
+            Debug.LogError(
+                "BossArenaTransitionManager requires "
+                + "BossBattleManager.",
+                this
+            );
+
+
+            return false;
+        }
+
+
+        if (!bossBattleManager.BindBossReferences(
+                bossReferences
+            ))
+        {
+            return false;
+        }
+
+
+        bool initializeArena =
+            boundBossReferences != bossReferences;
+
+
+        normalArenaRoot =
+            bossReferences.normalArenaRoot;
+
+        bossArenaRoot =
+            bossReferences.bossArenaRoot;
+
+        bossGround =
+            bossReferences.bossGround;
+
+        bossCameraBounds =
+            bossReferences.bossCameraBounds;
+
+        bossPlayerSpawnPoint =
+            bossReferences.bossPlayerSpawnPoint;
+
+        boundBossReferences =
+            bossReferences;
+
+
+        if (initializeArena)
+        {
+            InitializeArenaState();
+        }
+
+
+        return true;
+    }
+
+
+    private void InitializeArenaState()
+    {
         if (normalArenaRoot != null)
         {
             normalArenaRoot
@@ -157,6 +269,19 @@ public class BossArenaTransitionManager : MonoBehaviour
 
     public void BeginBossTransition()
     {
+        if (boundBossReferences == null)
+        {
+            Debug.LogError(
+                "BossArenaTransitionManager cannot begin before "
+                + "BossSceneReferences binding succeeds.",
+                this
+            );
+
+
+            return;
+        }
+
+
         if (transitionRunning)
         {
             return;
@@ -258,6 +383,22 @@ public class BossArenaTransitionManager : MonoBehaviour
         // ==========================================
         // 8. Player Boss Spawn으로 이동
         // ==========================================
+
+        if (floorTransitionManager == null)
+        {
+            Debug.LogError(
+                "BossArenaTransitionManager requires "
+                + "FloorTransitionManager for Player respawn.",
+                this
+            );
+        }
+        else
+        {
+            floorTransitionManager.SetRespawnPoint(
+                bossPlayerSpawnPoint
+            );
+        }
+
 
         TeleportPlayerToBossSpawn();
 
