@@ -360,6 +360,7 @@ MonoBehaviour:
   upgradeManager: {fileID: 1359112927}
   screenWipe: {fileID: 703787618}
   floorStartTitleUI: {fileID: 1719803304}
+  mapReferences: {fileID: 972143167}
   playerRigidbody: {fileID: 1275632732}
   playerMovement: {fileID: 1275632730}
   playerWeaponInputController: {fileID: 1275632749}
@@ -372,7 +373,6 @@ MonoBehaviour:
   slowMotion: {fileID: 1535952688}
   floorClearTimeScale: 0.35
   floorClearSlowLead: 0.08
-  playerSpawnPoint: {fileID: 1883429584}
   gameStartHoldDuration: 0.25
   respawnCameraMoveDuration: 0.45
   floorClearHoldDuration: 0.45
@@ -4167,7 +4167,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4970ce65f63bb4c43a5ca5f1885e8196, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InkMap
-  groundTilemap: {fileID: 1836400094}
   pixelsPerUnit: 16
   playerInkColor: {r: 0.1, g: 0.5, b: 1, a: 0.85}
   enemyInkColor: {r: 1, g: 0.1, b: 0.35, a: 0.85}
@@ -5779,7 +5778,6 @@ MonoBehaviour:
   smoothTime: 0.25
   lookAheadDistance: 2.2
   deadZone: 0.3
-  boundsTilemap: {fileID: 170533619}
   boundsPadding: 0.5
   hitShakeDuration: 0.11
   hitShakeStrength: 0.1
@@ -10350,6 +10348,60 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnPointGizmo
   radius: 0.5
+--- !u!1 &972143166
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 972143168}
+  - component: {fileID: 972143167}
+  m_Layer: 0
+  m_Name: MapSceneReferences
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &972143167
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 972143166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95c74506d9b44bb49a1ff6e0e3c439f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MapSceneReferences
+  groundTilemap: {fileID: 1836400094}
+  cameraBoundsTilemap: {fileID: 170533619}
+  playerSpawnPoint: {fileID: 1883429584}
+  enemySpawnPoints:
+  - {fileID: 519518130}
+  - {fileID: 959297427}
+  - {fileID: 1688036278}
+  - {fileID: 870542163}
+  - {fileID: 1471023725}
+  - {fileID: 1350675858}
+--- !u!4 &972143168
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 972143166}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.08555, y: -0.56015, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &994146879
 GameObject:
   m_ObjectHideFlags: 0
@@ -25288,13 +25340,6 @@ MonoBehaviour:
     type: 3}
   sprinklerPrefab: {fileID: 174283713666926076, guid: 29ec89c03211687419aa0ef1a92cefb0,
     type: 3}
-  spawnPoints:
-  - {fileID: 519518130}
-  - {fileID: 959297427}
-  - {fileID: 1688036278}
-  - {fileID: 870542163}
-  - {fileID: 1471023725}
-  - {fileID: 1350675858}
   floorDefinitions:
   - {fileID: 11400000, guid: c8326c3ecfb7c0249acf4eb810a3d231, type: 2}
   - {fileID: 11400000, guid: d7dae8d7053df7240b1bf180d0da47e6, type: 2}
@@ -40112,3 +40157,4 @@ SceneRoots:
   - {fileID: 1535952689}
   - {fileID: 45596326}
   - {fileID: 830335035}
+  - {fileID: 972143168}

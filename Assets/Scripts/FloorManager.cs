@@ -20,13 +20,7 @@ public class FloorManager : MonoBehaviour
     public GameObject sprinklerPrefab;
 
 
-    // ==================================================
-    // Spawn Points
-    // ==================================================
-
-    [Header("Spawn Points")]
-
-    public Transform[] spawnPoints;
+    private Transform[] spawnPoints;
 
 
     // ==================================================
@@ -206,6 +200,26 @@ public class FloorManager : MonoBehaviour
 
 
     // ==================================================
+    // Map Binding
+    // ==================================================
+
+    public void BindMapReferences(
+        MapSceneReferences mapReferences)
+    {
+        if (mapReferences == null ||
+            mapReferences.enemySpawnPoints == null ||
+            mapReferences.enemySpawnPoints.Length == 0)
+        {
+            return;
+        }
+
+
+        spawnPoints =
+            mapReferences.enemySpawnPoints;
+    }
+
+
+    // ==================================================
     // Update
     // ==================================================
 
@@ -336,6 +350,20 @@ public class FloorManager : MonoBehaviour
 
     public void SpawnCurrentFloor()
     {
+        if (spawnPoints == null ||
+            spawnPoints.Length == 0)
+        {
+            Debug.LogError(
+                "FloorManager requires enemy spawn "
+                + "points from MapSceneReferences.",
+                this
+            );
+
+
+            return;
+        }
+
+
         floorCleared =
             false;
 
@@ -601,7 +629,9 @@ public class FloorManager : MonoBehaviour
             spawnPoints.Length == 0)
         {
             Debug.LogError(
-                "Spawn Point가 없습니다."
+                "FloorManager requires enemy spawn "
+                + "points from MapSceneReferences.",
+                this
             );
 
 

@@ -2,7 +2,6 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
-using UnityEngine.Serialization;
 
 public class CameraFollow : MonoBehaviour
 {
@@ -41,16 +40,10 @@ public class CameraFollow : MonoBehaviour
     // Camera Bounds
     // ==================================================
 
+    private Tilemap boundsTilemap;
+
+
     [Header("Camera Bounds")]
-
-    [Tooltip(
-        "카메라가 벗어나면 안 되는 외벽 Tilemap. "
-        + "일반 맵에서는 Walls를 연결하세요."
-    )]
-
-    [FormerlySerializedAs("groundTilemap")]
-    public Tilemap boundsTilemap;
-
 
     [Tooltip(
         "카메라 화면 가장자리와 외벽 Bounds 사이의 여유. "
