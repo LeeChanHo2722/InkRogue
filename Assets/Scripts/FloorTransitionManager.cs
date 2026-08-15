@@ -140,6 +140,15 @@ public class FloorTransitionManager : MonoBehaviour
         true;
 
 
+    [SerializeField]
+    private bool autoStartFirstFloor =
+        true;
+
+
+    private bool firstFloorStarted =
+        false;
+
+
     // ==================================================
     // Awake
     // ==================================================
@@ -215,6 +224,25 @@ public class FloorTransitionManager : MonoBehaviour
                 this
             );
         }
+        if (autoStartFirstFloor)
+        {
+            BeginFirstFloor();
+        }
+    }
+
+
+    // ==================================================
+    // Begin First Floor
+    // ==================================================
+
+    public void BeginFirstFloor()
+    {
+        if (firstFloorStarted)
+            return;
+
+
+        firstFloorStarted =
+            true;
 
 
         RestoreTimeScale();
