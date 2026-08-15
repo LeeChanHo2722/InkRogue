@@ -84,6 +84,9 @@ public class FloorManager : MonoBehaviour
         false;
 
 
+    private FloorObjective floorObjective;
+
+
     // ==================================================
     // Runtime - Wave
     // ==================================================
@@ -123,6 +126,57 @@ public class FloorManager : MonoBehaviour
 
     public int CurrentWave =>
         currentWaveIndex + 1;
+
+
+    public bool IsLastWaveStarted
+    {
+        get
+        {
+            FloorWaveData floorData =
+                GetCurrentFloorData();
+
+
+            return
+                floorData != null &&
+                floorData.waves != null &&
+                floorData.waves.Count > 0 &&
+                currentWaveIndex >=
+                floorData.waves.Count - 1;
+        }
+    }
+
+
+    // ==================================================
+    // Awake
+    // ==================================================
+
+    private void Awake()
+    {
+        floorObjective =
+            GetComponent<FloorObjective>();
+
+
+        if (floorObjective == null)
+        {
+            floorObjective =
+                gameObject.AddComponent<
+                    EliminateAllObjective>();
+        }
+
+
+        floorObjective.Completed +=
+            FloorClear;
+    }
+
+
+    private void OnDestroy()
+    {
+        if (floorObjective != null)
+        {
+            floorObjective.Completed -=
+                FloorClear;
+        }
+    }
 
 
     // ==================================================
@@ -297,6 +351,9 @@ public class FloorManager : MonoBehaviour
 
         remainingEnemies =
             0;
+
+
+        floorObjective.Begin();
 
 
         if (floorClearText != null)
@@ -705,36 +762,12 @@ public class FloorManager : MonoBehaviour
 
     private void CheckFloorClear()
     {
-        if (floorCleared)
+        if (floorCleared ||
+            floorObjective == null)
             return;
 
 
-        FloorWaveData floorData =
-            GetCurrentFloorData();
-
-
-        if (floorData == null ||
-            floorData.waves == null ||
-            floorData.waves.Count == 0)
-        {
-            return;
-        }
-
-
-        bool lastWaveStarted =
-            currentWaveIndex >=
-            floorData.waves.Count - 1;
-
-
-        if (!lastWaveStarted)
-            return;
-
-
-        if (remainingEnemies > 0)
-            return;
-
-
-        FloorClear();
+        floorObjective.Evaluate();
     }
 
 
