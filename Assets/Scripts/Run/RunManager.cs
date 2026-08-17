@@ -34,6 +34,8 @@ public class RunManager : MonoBehaviour
 
     public RunMode CurrentMode => currentMode;
 
+    public bool IsInitialized => CurrentMode != RunMode.None;
+
     public IReadOnlyList<WeaponDefinition> RunInventory =>
         runInventory;
 
