@@ -9,8 +9,7 @@ public struct WeaponUseContext
 {
     public PlayerWeaponController Controller;
 
-    public PlayerWeaponController
-        .WeaponSlotSide SlotSide;
+    public WeaponSlotSide SlotSide;
 
     public WeaponDefinition Weapon;
 
@@ -23,8 +22,7 @@ public struct WeaponUseContext
 
     public WeaponUseContext(
         PlayerWeaponController controller,
-        PlayerWeaponController
-            .WeaponSlotSide slotSide,
+        WeaponSlotSide slotSide,
         WeaponDefinition weapon,
         Transform usePoint,
         float damageMultiplier,
@@ -89,8 +87,7 @@ public abstract class PlayerWeaponBehaviour
 
 
     public virtual bool IsUsingSlot(
-        PlayerWeaponController
-            .WeaponSlotSide side
+        WeaponSlotSide side
     )
     {
         return IsUsing;
@@ -118,8 +115,7 @@ public abstract class PlayerWeaponBehaviour
 
     // 특정 Slot만 취소
     public virtual void CancelUse(
-        PlayerWeaponController
-            .WeaponSlotSide side
+        WeaponSlotSide side
     )
     {
         CancelUse();

@@ -184,8 +184,7 @@ public class SplashBombWeaponBehaviour
     private bool hasPreviewOwner;
 
 
-    private PlayerWeaponController
-        .WeaponSlotSide previewOwnerSide;
+    private WeaponSlotSide previewOwnerSide;
 
 
     // ==================================================
@@ -238,8 +237,7 @@ public class SplashBombWeaponBehaviour
 
 
     public override bool IsUsingSlot(
-        PlayerWeaponController
-            .WeaponSlotSide side
+        WeaponSlotSide side
     )
     {
         return
@@ -347,14 +345,12 @@ public class SplashBombWeaponBehaviour
     public override void CancelUse()
     {
         CancelSlot(
-            PlayerWeaponController
-                .WeaponSlotSide.Right
+            WeaponSlotSide.Right
         );
 
 
         CancelSlot(
-            PlayerWeaponController
-                .WeaponSlotSide.Left
+            WeaponSlotSide.Left
         );
     }
 
@@ -364,8 +360,7 @@ public class SplashBombWeaponBehaviour
     // ==================================================
 
     public override void CancelUse(
-        PlayerWeaponController
-            .WeaponSlotSide side
+        WeaponSlotSide side
     )
     {
         CancelSlot(
@@ -379,8 +374,7 @@ public class SplashBombWeaponBehaviour
     // ==================================================
 
     private void CancelSlot(
-        PlayerWeaponController
-            .WeaponSlotSide side
+        WeaponSlotSide side
     )
     {
         SlotRuntimeState state =
@@ -1197,8 +1191,7 @@ public class SplashBombWeaponBehaviour
     // ==================================================
 
     private void CancelMorphToHand(
-        PlayerWeaponController
-            .WeaponSlotSide side
+        WeaponSlotSide side
     )
     {
         if (handMorphController == null)
@@ -1330,13 +1323,11 @@ public class SplashBombWeaponBehaviour
     // ==================================================
 
     private SlotRuntimeState GetState(
-        PlayerWeaponController
-            .WeaponSlotSide side
+        WeaponSlotSide side
     )
     {
         if (side ==
-            PlayerWeaponController
-                .WeaponSlotSide.Right)
+            WeaponSlotSide.Right)
         {
             return rightState;
         }
@@ -1354,13 +1345,11 @@ public class SplashBombWeaponBehaviour
     // ==================================================
 
     private bool IsOtherSlotCharging(
-        PlayerWeaponController
-            .WeaponSlotSide side
+        WeaponSlotSide side
     )
     {
         if (side ==
-            PlayerWeaponController
-                .WeaponSlotSide.Right)
+            WeaponSlotSide.Right)
         {
             return
                 leftState.isCharging;
