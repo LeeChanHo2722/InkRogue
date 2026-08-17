@@ -407,15 +407,13 @@ public class PlayerHandInkMorphController : MonoBehaviour
 
 
         UpdateSlotState(
-            PlayerWeaponController
-                .WeaponSlotSide.Right,
+            WeaponSlotSide.Right,
             logicalRight
         );
 
 
         UpdateSlotState(
-            PlayerWeaponController
-                .WeaponSlotSide.Left,
+            WeaponSlotSide.Left,
             logicalLeft
         );
 
@@ -447,23 +445,20 @@ public class PlayerHandInkMorphController : MonoBehaviour
 
 
         InitializeSlot(
-            PlayerWeaponController
-                .WeaponSlotSide.Right,
+            WeaponSlotSide.Right,
             logicalRight
         );
 
 
         InitializeSlot(
-            PlayerWeaponController
-                .WeaponSlotSide.Left,
+            WeaponSlotSide.Left,
             logicalLeft
         );
     }
 
 
     private void InitializeSlot(
-        PlayerWeaponController
-            .WeaponSlotSide side,
+        WeaponSlotSide side,
         SlotMorphState state
     )
     {
@@ -521,8 +516,7 @@ public class PlayerHandInkMorphController : MonoBehaviour
     // ==================================================
 
     private void OnWeaponChanged(
-        PlayerWeaponController
-            .WeaponSlotSide side,
+        WeaponSlotSide side,
         WeaponDefinition weapon
     )
     {
@@ -563,8 +557,7 @@ public class PlayerHandInkMorphController : MonoBehaviour
     // ==================================================
 
     private void OnForcedHandChanged(
-        PlayerWeaponController
-            .WeaponSlotSide side,
+        WeaponSlotSide side,
         bool forced
     )
     {
@@ -603,8 +596,7 @@ public class PlayerHandInkMorphController : MonoBehaviour
     // ==================================================
 
     private void EvaluateNormalTarget(
-        PlayerWeaponController
-            .WeaponSlotSide side,
+        WeaponSlotSide side,
         SlotMorphState state
     )
     {
@@ -651,8 +643,7 @@ public class PlayerHandInkMorphController : MonoBehaviour
     // ==================================================
 
     public void NotifyThrowableChargeStarted(
-        PlayerWeaponController
-            .WeaponSlotSide side
+        WeaponSlotSide side
     )
     {
         SlotMorphState state =
@@ -680,8 +671,7 @@ public class PlayerHandInkMorphController : MonoBehaviour
 
 
     public void NotifyThrowableChargeCancelled(
-        PlayerWeaponController
-            .WeaponSlotSide side
+        WeaponSlotSide side
     )
     {
         SlotMorphState state =
@@ -702,8 +692,7 @@ public class PlayerHandInkMorphController : MonoBehaviour
 
 
     public void NotifyThrowableThrown(
-        PlayerWeaponController
-            .WeaponSlotSide side,
+        WeaponSlotSide side,
         float cooldownDuration
     )
     {
@@ -742,8 +731,7 @@ public class PlayerHandInkMorphController : MonoBehaviour
     // ==================================================
 
     private void UpdateSlotState(
-        PlayerWeaponController
-            .WeaponSlotSide side,
+        WeaponSlotSide side,
         SlotMorphState state
     )
     {
@@ -1181,8 +1169,7 @@ public class PlayerHandInkMorphController : MonoBehaviour
     // ==================================================
 
     private void CompleteCurrentPhase(
-        PlayerWeaponController
-            .WeaponSlotSide side,
+        WeaponSlotSide side,
         SlotMorphState state
     )
     {
@@ -1393,8 +1380,7 @@ public class PlayerHandInkMorphController : MonoBehaviour
 
 
     private void UpdateRespawn(
-        PlayerWeaponController
-            .WeaponSlotSide side,
+        WeaponSlotSide side,
         SlotMorphState state
     )
     {
@@ -1806,8 +1792,7 @@ public class PlayerHandInkMorphController : MonoBehaviour
 
 
     private void RefreshProfile(
-        PlayerWeaponController
-            .WeaponSlotSide side,
+        WeaponSlotSide side,
         SlotMorphState state
     )
     {
@@ -1877,13 +1862,11 @@ public class PlayerHandInkMorphController : MonoBehaviour
     // ==================================================
 
     private SlotMorphState GetState(
-        PlayerWeaponController
-            .WeaponSlotSide side
+        WeaponSlotSide side
     )
     {
         if (side ==
-            PlayerWeaponController
-                .WeaponSlotSide.Right)
+            WeaponSlotSide.Right)
         {
             return logicalRight;
         }

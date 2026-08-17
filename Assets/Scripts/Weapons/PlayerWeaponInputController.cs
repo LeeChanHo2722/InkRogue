@@ -137,8 +137,7 @@ public class PlayerWeaponInputController
         // ==========================================
 
         UpdateSlot(
-            PlayerWeaponController
-                .WeaponSlotSide.Right,
+            WeaponSlotSide.Right,
 
             Mouse.current
                 .leftButton
@@ -163,8 +162,7 @@ public class PlayerWeaponInputController
         // ==========================================
 
         UpdateSlot(
-            PlayerWeaponController
-                .WeaponSlotSide.Left,
+            WeaponSlotSide.Left,
 
             Mouse.current
                 .rightButton
@@ -188,8 +186,7 @@ public class PlayerWeaponInputController
     // ==================================================
 
     private void UpdateSlot(
-        PlayerWeaponController
-            .WeaponSlotSide side,
+        WeaponSlotSide side,
 
         bool pressed,
 
@@ -391,15 +388,13 @@ public class PlayerWeaponInputController
     {
         activeRightBehaviour
             ?.CancelUse(
-                PlayerWeaponController
-                    .WeaponSlotSide.Right
+                WeaponSlotSide.Right
             );
 
 
         activeLeftBehaviour
             ?.CancelUse(
-                PlayerWeaponController
-                    .WeaponSlotSide.Left
+                WeaponSlotSide.Left
             );
     }
 

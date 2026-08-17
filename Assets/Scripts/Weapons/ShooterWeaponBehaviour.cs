@@ -116,8 +116,7 @@ public class ShooterWeaponBehaviour
 
 
     public override bool IsUsingSlot(
-        PlayerWeaponController
-            .WeaponSlotSide side
+        WeaponSlotSide side
     )
     {
         return
@@ -428,8 +427,7 @@ public class ShooterWeaponBehaviour
     // ==================================================
 
     public override void CancelUse(
-        PlayerWeaponController
-            .WeaponSlotSide side
+        WeaponSlotSide side
     )
     {
         StopSlot(
@@ -630,13 +628,11 @@ public class ShooterWeaponBehaviour
     // ==================================================
 
     private SlotRuntimeState GetState(
-        PlayerWeaponController
-            .WeaponSlotSide side
+        WeaponSlotSide side
     )
     {
         if (side ==
-            PlayerWeaponController
-                .WeaponSlotSide.Right)
+            WeaponSlotSide.Right)
         {
             return rightState;
         }

@@ -3,16 +3,6 @@ using UnityEngine;
 
 public class PlayerWeaponController : MonoBehaviour
 {
-    // ==================================================
-    // Slot Side
-    // ==================================================
-
-    public enum WeaponSlotSide
-    {
-        Right,
-        Left
-    }
-
 
     // ==================================================
     // Weapon Slot
