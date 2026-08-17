@@ -15,6 +15,7 @@ MonoBehaviour:
   weaponId: shooter
   displayName: Shooter
   weaponType: 1
+  family: 1
   icon: {fileID: 0}
   baseDamage: 1
   baseInkCost: 1

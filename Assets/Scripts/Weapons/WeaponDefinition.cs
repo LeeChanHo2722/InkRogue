@@ -37,6 +37,11 @@ public class WeaponDefinition : ScriptableObject
         WeaponType.None;
 
 
+    [SerializeField]
+    private WeaponFamily family =
+        WeaponFamily.Unassigned;
+
+
     // ==================================================
     // UI
     // ==================================================
@@ -85,6 +90,12 @@ public class WeaponDefinition : ScriptableObject
     public WeaponType Type
     {
         get { return weaponType; }
+    }
+
+
+    public WeaponFamily Family
+    {
+        get { return family; }
     }
 
 
