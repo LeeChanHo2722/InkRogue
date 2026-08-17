@@ -822,6 +822,35 @@ public class FloorTransitionManager : MonoBehaviour
 
     private IEnumerator PrepareFloorStartRoutine()
     {
+        RunManager runManager =
+            floorManager != null
+                ? floorManager.runManager
+                : null;
+
+
+        if (runManager != null &&
+            runManager.IsInitialized)
+        {
+            if (playerWeaponInputController == null)
+            {
+                Debug.LogError(
+                    "FloorTransitionManager requires "
+                    + "PlayerWeaponInputController to apply "
+                    + "the Run Floor Loadout.",
+                    this
+                );
+            }
+            else
+            {
+                playerWeaponInputController
+                    .ConfigureCombatLoadout(
+                        runManager.LeftFloorLoadout,
+                        runManager.RightFloorLoadout
+                    );
+            }
+        }
+
+
         float waitTimer =
             0f;
 
