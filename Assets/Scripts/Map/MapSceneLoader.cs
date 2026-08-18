@@ -143,7 +143,24 @@ public class MapSceneLoader : MonoBehaviour
                 leftWeapon
             );
 
-        if (rightAssigned && leftAssigned)
+        bool alternateWeaponsAssigned =
+            rightWeapon == leftWeapon ||
+            (
+                runManager.TrySetFloorLoadoutWeapon(
+                    WeaponSlotSide.Right,
+                    1,
+                    leftWeapon
+                ) &&
+                runManager.TrySetFloorLoadoutWeapon(
+                    WeaponSlotSide.Left,
+                    1,
+                    rightWeapon
+                )
+            );
+
+        if (rightAssigned &&
+            leftAssigned &&
+            alternateWeaponsAssigned)
             return true;
 
         runManager.InitializeRun(

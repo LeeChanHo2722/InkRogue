@@ -13,6 +13,10 @@ public class SplashBombChargeVFX : MonoBehaviour
         splashBombWeaponBehaviour;
 
 
+    [SerializeField]
+    private WeaponSlotSide slotSide;
+
+
     [Tooltip("입자가 모일 중심점")]
     public Transform chargePoint;
 
@@ -215,7 +219,9 @@ public class SplashBombChargeVFX : MonoBehaviour
 
         bool charging =
             splashBombWeaponBehaviour
-                .IsCharging;
+                .IsUsingSlot(
+                    slotSide
+                );
 
 
         // ==========================================
@@ -253,7 +259,9 @@ public class SplashBombChargeVFX : MonoBehaviour
         // 실제 SplashBomb의 충전량을 그대로 사용.
         float chargePercent =
             splashBombWeaponBehaviour
-                .Charge01;
+                .GetCharge01(
+                    slotSide
+                );
 
 
         UpdateCenterRing(

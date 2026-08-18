@@ -15,6 +15,14 @@ public class PlayerWeaponInputController
     private PlayerWeaponController
         weaponController;
 
+    [SerializeField]
+    private InputActionReference
+        leftWeaponWheelAction;
+
+    [SerializeField]
+    private InputActionReference
+        rightWeaponWheelAction;
+
 
     // ==================================================
     // Input State
@@ -31,9 +39,34 @@ public class PlayerWeaponInputController
     private bool inputEnabled =
         true;
 
+    [SerializeField]
+    [Min(0f)]
+    private float weaponWheelDeadZone =
+        80f;
+
 
     public bool InputEnabled =>
         inputEnabled;
+
+    public bool IsWeaponWheelOpen =>
+        isWeaponWheelOpen;
+
+    public WeaponSlotSide ActiveWeaponWheelSide =>
+        activeWeaponWheelSide;
+
+    public int HighlightedWeaponSlotIndex =>
+        highlightedWeaponSlotIndex;
+
+    public Vector2 WeaponWheelOrigin =>
+        weaponWheelOrigin;
+
+    private bool isWeaponWheelOpen;
+
+    private WeaponSlotSide activeWeaponWheelSide;
+
+    private int highlightedWeaponSlotIndex = -1;
+
+    private Vector2 weaponWheelOrigin;
 
 
     // ==================================================
@@ -57,6 +90,13 @@ public class PlayerWeaponInputController
     // ==================================================
 
     private const int CombatLoadoutSlotCount = 3;
+
+    private static readonly Vector2[] WeaponWheelSlotDirections =
+    {
+        Vector2.up,
+        new Vector2(0.8660254f, -0.5f),
+        new Vector2(-0.8660254f, -0.5f)
+    };
 
     private readonly WeaponDefinition[] leftCombatLoadout =
         new WeaponDefinition[CombatLoadoutSlotCount];
@@ -89,6 +129,28 @@ public class PlayerWeaponInputController
     }
 
 
+    private void OnEnable()
+    {
+        if (leftWeaponWheelAction?.action != null)
+        {
+            leftWeaponWheelAction.action.started +=
+                OnLeftWeaponWheelStarted;
+            leftWeaponWheelAction.action.canceled +=
+                OnLeftWeaponWheelCanceled;
+            leftWeaponWheelAction.action.Enable();
+        }
+
+        if (rightWeaponWheelAction?.action != null)
+        {
+            rightWeaponWheelAction.action.started +=
+                OnRightWeaponWheelStarted;
+            rightWeaponWheelAction.action.canceled +=
+                OnRightWeaponWheelCanceled;
+            rightWeaponWheelAction.action.Enable();
+        }
+    }
+
+
     // ==================================================
     // Disable
     //
@@ -98,6 +160,25 @@ public class PlayerWeaponInputController
 
     private void OnDisable()
     {
+        if (leftWeaponWheelAction?.action != null)
+        {
+            leftWeaponWheelAction.action.started -=
+                OnLeftWeaponWheelStarted;
+            leftWeaponWheelAction.action.canceled -=
+                OnLeftWeaponWheelCanceled;
+            leftWeaponWheelAction.action.Disable();
+        }
+
+        if (rightWeaponWheelAction?.action != null)
+        {
+            rightWeaponWheelAction.action.started -=
+                OnRightWeaponWheelStarted;
+            rightWeaponWheelAction.action.canceled -=
+                OnRightWeaponWheelCanceled;
+            rightWeaponWheelAction.action.Disable();
+        }
+
+        ResetWeaponWheelState();
         CancelAllSlots();
     }
 
@@ -155,6 +236,12 @@ public class PlayerWeaponInputController
             return;
         }
 
+        if (isWeaponWheelOpen)
+        {
+            UpdateWeaponWheelSelection();
+            return;
+        }
+
 
         // ==========================================
         // RIGHT SLOT
@@ -204,6 +291,149 @@ public class PlayerWeaponInputController
 
             ref activeLeftBehaviour
         );
+    }
+
+
+    private void OnLeftWeaponWheelStarted(
+        InputAction.CallbackContext context
+    )
+    {
+        TryBeginWeaponWheel(
+            WeaponSlotSide.Left
+        );
+    }
+
+
+    private void OnLeftWeaponWheelCanceled(
+        InputAction.CallbackContext context
+    )
+    {
+        TryEndWeaponWheel(
+            WeaponSlotSide.Left
+        );
+    }
+
+
+    private void OnRightWeaponWheelStarted(
+        InputAction.CallbackContext context
+    )
+    {
+        TryBeginWeaponWheel(
+            WeaponSlotSide.Right
+        );
+    }
+
+
+    private void OnRightWeaponWheelCanceled(
+        InputAction.CallbackContext context
+    )
+    {
+        TryEndWeaponWheel(
+            WeaponSlotSide.Right
+        );
+    }
+
+
+    private void TryBeginWeaponWheel(
+        WeaponSlotSide side
+    )
+    {
+        if (!inputEnabled ||
+            Time.timeScale <= 0f ||
+            weaponController == null ||
+            Mouse.current == null ||
+            isWeaponWheelOpen)
+        {
+            return;
+        }
+
+        activeWeaponWheelSide = side;
+        isWeaponWheelOpen = true;
+        highlightedWeaponSlotIndex = -1;
+        weaponWheelOrigin =
+            Mouse.current.position.ReadValue();
+
+        CancelAllSlots();
+    }
+
+
+    private void TryEndWeaponWheel(
+        WeaponSlotSide side
+    )
+    {
+        if (!isWeaponWheelOpen ||
+            activeWeaponWheelSide != side)
+        {
+            return;
+        }
+
+        if (highlightedWeaponSlotIndex >= 0)
+        {
+            TrySelectWeapon(
+                activeWeaponWheelSide,
+                highlightedWeaponSlotIndex
+            );
+        }
+
+        ResetWeaponWheelState();
+    }
+
+
+    private void UpdateWeaponWheelSelection()
+    {
+        Vector2 mousePosition =
+            Mouse.current.position.ReadValue();
+
+        Vector2 direction =
+            mousePosition - weaponWheelOrigin;
+
+        float deadZoneSqr =
+            weaponWheelDeadZone * weaponWheelDeadZone;
+
+        if (direction.sqrMagnitude <= deadZoneSqr)
+        {
+            highlightedWeaponSlotIndex = -1;
+            return;
+        }
+
+        direction.Normalize();
+
+        int closestSlotIndex = 0;
+        float closestDot = float.NegativeInfinity;
+
+        for (int i = 0;
+             i < WeaponWheelSlotDirections.Length;
+             i++)
+        {
+            float dot = Vector2.Dot(
+                direction,
+                WeaponWheelSlotDirections[i]
+            );
+
+            if (dot > closestDot)
+            {
+                closestDot = dot;
+                closestSlotIndex = i;
+            }
+        }
+
+        WeaponDefinition[] loadout =
+            GetCombatLoadout(
+                activeWeaponWheelSide
+            );
+
+        highlightedWeaponSlotIndex =
+            loadout[closestSlotIndex] != null
+                ? closestSlotIndex
+                : -1;
+    }
+
+
+    private void ResetWeaponWheelState()
+    {
+        isWeaponWheelOpen = false;
+        activeWeaponWheelSide = default;
+        highlightedWeaponSlotIndex = -1;
     }
 
 
@@ -654,6 +884,7 @@ public class PlayerWeaponInputController
         // 현재 무기 사용도 즉시 취소.
         if (!inputEnabled)
         {
+            ResetWeaponWheelState();
             CancelAllSlots();
         }
     }

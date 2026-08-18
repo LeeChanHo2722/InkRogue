@@ -96,11 +96,19 @@ public class SplashBombWeaponBehaviour
     [Header("Trajectory Preview")]
 
     [SerializeField]
-    private LineRenderer rangeLine;
+    private LineRenderer rightRangeLine;
 
 
     [SerializeField]
-    private Transform landingIndicator;
+    private LineRenderer leftRangeLine;
+
+
+    [SerializeField]
+    private Transform rightLandingIndicator;
+
+
+    [SerializeField]
+    private Transform leftLandingIndicator;
 
 
     [SerializeField]
@@ -173,21 +181,6 @@ public class SplashBombWeaponBehaviour
 
 
     // ==================================================
-    // Preview Owner
-    //
-    // 현재 Preview Renderer가 하나이므로
-    // Bomb 두 개를 동시에 Charge하지는 않는다.
-    //
-    // Slot Runtime / Cooldown 자체는 독립적이다.
-    // ==================================================
-
-    private bool hasPreviewOwner;
-
-
-    private WeaponSlotSide previewOwnerSide;
-
-
-    // ==================================================
     // Public State
     // ==================================================
 
@@ -236,6 +229,16 @@ public class SplashBombWeaponBehaviour
     }
 
 
+    public float GetCharge01(
+        WeaponSlotSide side
+    )
+    {
+        return GetCharge01(
+            GetState(side)
+        );
+    }
+
+
     public override bool IsUsingSlot(
         WeaponSlotSide side
     )
@@ -264,9 +267,21 @@ public class SplashBombWeaponBehaviour
 
     private void Start()
     {
-        SetupLineRenderer();
+        SetupLineRenderer(
+            WeaponSlotSide.Right
+        );
 
-        HidePreview();
+        SetupLineRenderer(
+            WeaponSlotSide.Left
+        );
+
+        HidePreview(
+            WeaponSlotSide.Right
+        );
+
+        HidePreview(
+            WeaponSlotSide.Left
+        );
     }
 
 
@@ -391,16 +406,7 @@ public class SplashBombWeaponBehaviour
             false;
 
 
-        if (hasPreviewOwner &&
-            previewOwnerSide ==
-            side)
-        {
-            hasPreviewOwner =
-                false;
-
-
-            HidePreview();
-        }
+        HidePreview(side);
 
 
         // 실제 차징 중 취소된 경우
@@ -449,21 +455,6 @@ public class SplashBombWeaponBehaviour
 
         if (playerDive != null &&
             playerDive.IsSwimForm)
-        {
-            return;
-        }
-
-
-        // ==========================================
-        // 다른 손에서 Bomb 차지 중
-        //
-        // 현재 Preview Renderer가 하나이므로
-        // 동시 Bomb 차지만 제한.
-        // ==========================================
-
-        if (IsOtherSlotCharging(
-                context.SlotSide
-            ))
         {
             return;
         }
@@ -556,14 +547,6 @@ public class SplashBombWeaponBehaviour
             Time.time;
 
 
-        hasPreviewOwner =
-            true;
-
-
-        previewOwnerSide =
-            context.SlotSide;
-
-
         // ==========================================
         // Morph
         //
@@ -579,7 +562,9 @@ public class SplashBombWeaponBehaviour
         }
 
 
-        ShowPreview();
+        ShowPreview(
+            context.SlotSide
+        );
 
 
         UpdatePreview(
@@ -675,12 +660,15 @@ public class SplashBombWeaponBehaviour
         }
 
 
-        if (!hasPreviewOwner ||
-            previewOwnerSide !=
-            context.SlotSide)
-        {
-            return;
-        }
+        LineRenderer rangeLine =
+            GetRangeLine(
+                context.SlotSide
+            );
+
+        Transform landingIndicator =
+            GetLandingIndicator(
+                context.SlotSide
+            );
 
 
         Vector2 start =
@@ -1042,16 +1030,9 @@ public class SplashBombWeaponBehaviour
         // Preview End
         // ==========================================
 
-        if (hasPreviewOwner &&
-            previewOwnerSide ==
-            context.SlotSide)
-        {
-            hasPreviewOwner =
-                false;
-
-
-            HidePreview();
-        }
+        HidePreview(
+            context.SlotSide
+        );
 
 
         // ==========================================
@@ -1211,8 +1192,13 @@ public class SplashBombWeaponBehaviour
     // Line Renderer Setup
     // ==================================================
 
-    private void SetupLineRenderer()
+    private void SetupLineRenderer(
+        WeaponSlotSide side
+    )
     {
+        LineRenderer rangeLine =
+            GetRangeLine(side);
+
         if (rangeLine == null)
         {
             return;
@@ -1274,8 +1260,16 @@ public class SplashBombWeaponBehaviour
     // Show Preview
     // ==================================================
 
-    private void ShowPreview()
+    private void ShowPreview(
+        WeaponSlotSide side
+    )
     {
+        LineRenderer rangeLine =
+            GetRangeLine(side);
+
+        Transform landingIndicator =
+            GetLandingIndicator(side);
+
         if (rangeLine != null)
         {
             rangeLine.enabled =
@@ -1298,8 +1292,16 @@ public class SplashBombWeaponBehaviour
     // Hide Preview
     // ==================================================
 
-    private void HidePreview()
+    private void HidePreview(
+        WeaponSlotSide side
+    )
     {
+        LineRenderer rangeLine =
+            GetRangeLine(side);
+
+        Transform landingIndicator =
+            GetLandingIndicator(side);
+
         if (rangeLine != null)
         {
             rangeLine.enabled =
@@ -1315,6 +1317,26 @@ public class SplashBombWeaponBehaviour
                     false
                 );
         }
+    }
+
+
+    private LineRenderer GetRangeLine(
+        WeaponSlotSide side
+    )
+    {
+        return side == WeaponSlotSide.Right
+            ? rightRangeLine
+            : leftRangeLine;
+    }
+
+
+    private Transform GetLandingIndicator(
+        WeaponSlotSide side
+    )
+    {
+        return side == WeaponSlotSide.Right
+            ? rightLandingIndicator
+            : leftLandingIndicator;
     }
 
 
@@ -1334,30 +1356,6 @@ public class SplashBombWeaponBehaviour
 
 
         return leftState;
-    }
-
-
-    // ==================================================
-    // Other Slot Charging
-    //
-    // Preview Renderer가 현재 하나뿐이므로
-    // Bomb + Bomb 동시 차지만 제한.
-    // ==================================================
-
-    private bool IsOtherSlotCharging(
-        WeaponSlotSide side
-    )
-    {
-        if (side ==
-            WeaponSlotSide.Right)
-        {
-            return
-                leftState.isCharging;
-        }
-
-
-        return
-            rightState.isCharging;
     }
 
 
