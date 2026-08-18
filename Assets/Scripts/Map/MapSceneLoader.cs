@@ -68,6 +68,10 @@ public class MapSceneLoader : MonoBehaviour
         }
 
 
+        if (!TryInitializeMigrationRun())
+            return;
+
+
         loadStarted =
             true;
 
@@ -75,6 +79,93 @@ public class MapSceneLoader : MonoBehaviour
         StartCoroutine(
             LoadMapRoutine()
         );
+    }
+
+
+    private bool TryInitializeMigrationRun()
+    {
+        if (floorTransitionManager == null)
+            return LogMigrationRunError(
+                "FloorTransitionManager is missing."
+            );
+
+        FloorManager floorManager =
+            floorTransitionManager.floorManager;
+
+        if (floorManager == null)
+            return LogMigrationRunError("FloorManager is missing.");
+
+        RunManager runManager = floorManager.runManager;
+
+        if (runManager == null)
+            return LogMigrationRunError("RunManager is missing.");
+
+        if (runManager.IsInitialized)
+            return true;
+
+        Rigidbody2D playerRigidbody =
+            floorTransitionManager.playerRigidbody;
+
+        if (playerRigidbody == null)
+            return LogMigrationRunError("Player Rigidbody2D is missing.");
+
+        PlayerWeaponController weaponController =
+            playerRigidbody.GetComponent<PlayerWeaponController>();
+
+        if (weaponController == null)
+            return LogMigrationRunError("PlayerWeaponController is missing.");
+
+        WeaponDefinition rightWeapon = weaponController.RightWeapon;
+        WeaponDefinition leftWeapon = weaponController.LeftWeapon;
+
+        if (rightWeapon == null)
+            return LogMigrationRunError("Right WeaponDefinition is missing.");
+
+        if (leftWeapon == null)
+            return LogMigrationRunError("Left WeaponDefinition is missing.");
+
+        runManager.InitializeRun(
+            RunMode.TwentyFloor,
+            new[] { rightWeapon, leftWeapon }
+        );
+
+        bool rightAssigned =
+            runManager.TrySetFloorLoadoutWeapon(
+                WeaponSlotSide.Right,
+                0,
+                rightWeapon
+            );
+
+        bool leftAssigned =
+            runManager.TrySetFloorLoadoutWeapon(
+                WeaponSlotSide.Left,
+                0,
+                leftWeapon
+            );
+
+        if (rightAssigned && leftAssigned)
+            return true;
+
+        runManager.InitializeRun(
+            RunMode.None,
+            System.Array.Empty<WeaponDefinition>()
+        );
+
+        return LogMigrationRunError(
+            "Floor Loadout initialization failed."
+        );
+    }
+
+
+    private bool LogMigrationRunError(string message)
+    {
+        Debug.LogError(
+            "MapSceneLoader could not initialize the migration Run: "
+            + message,
+            this
+        );
+
+        return false;
     }
 
 
