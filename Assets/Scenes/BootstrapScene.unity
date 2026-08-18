@@ -4861,6 +4861,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RunManager
   maxFloor: 3
   currentFloor: 1
+  currentMode: 0
 --- !u!4 &830335035
 Transform:
   m_ObjectHideFlags: 0
@@ -6939,7 +6940,7 @@ MonoBehaviour:
     weapon: {fileID: 11400000, guid: 9b182a3d52c679147b47c1468ed3ccc0, type: 2}
     forcedHand: 0
   leftSlot:
-    weapon: {fileID: 11400000, guid: 9b182a3d52c679147b47c1468ed3ccc0, type: 2}
+    weapon: {fileID: 11400000, guid: f2bdf56fb01692c4fa1ab6f9501bdc8b, type: 2}
     forcedHand: 0
   rightUsePoint: {fileID: 404157816}
   leftUsePoint: {fileID: 1934422578}
