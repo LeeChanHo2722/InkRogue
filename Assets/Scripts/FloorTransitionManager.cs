@@ -685,6 +685,20 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
+        if (floorManager == null ||
+            floorManager.runManager == null ||
+            !floorManager.runManager
+                .TryPrepareFloorCandidates(
+                    floorManager.FloorDefinitions
+                ))
+        {
+            Debug.LogWarning(
+                "Floor Selection candidates could not be prepared.",
+                this
+            );
+        }
+
+
         StartCoroutine(
             NextFloorRoutine()
         );

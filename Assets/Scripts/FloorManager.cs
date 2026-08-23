@@ -29,7 +29,8 @@ public class FloorManager : MonoBehaviour
 
     [Header("Floor Definitions")]
 
-    public FloorDefinition[] floorDefinitions;
+    [SerializeField]
+    private FloorDefinition[] floorDefinitions;
 
 
     [Header("Run")]
@@ -102,6 +103,10 @@ public class FloorManager : MonoBehaviour
 
     public int CurrentFloor =>
         runManager.CurrentFloor;
+
+
+    public System.Collections.Generic.IReadOnlyList<FloorDefinition> FloorDefinitions =>
+        floorDefinitions;
 
 
     public int RemainingEnemies =>
