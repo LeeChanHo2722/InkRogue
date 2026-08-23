@@ -811,6 +811,16 @@ public class FloorManager : MonoBehaviour
     private FloorWaveData
         GetCurrentFloorData()
     {
+        FloorDefinition floorDefinition =
+            runManager != null
+                ? runManager.SelectedNextFloor
+                : null;
+
+
+        if (floorDefinition != null)
+            return floorDefinition.floorData;
+
+
         int index =
             CurrentFloor - 1;
 
@@ -823,7 +833,7 @@ public class FloorManager : MonoBehaviour
         }
 
 
-        FloorDefinition floorDefinition =
+        floorDefinition =
             floorDefinitions[index];
 
 
