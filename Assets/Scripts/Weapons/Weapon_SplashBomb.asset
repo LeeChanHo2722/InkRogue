@@ -16,6 +16,6 @@ MonoBehaviour:
   displayName: Splash Bomb
   weaponType: 2
   family: 4
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: f2ffcff4b8377b04db811473a6afb8bb, type: 3}
   baseDamage: 1
   baseInkCost: 1
