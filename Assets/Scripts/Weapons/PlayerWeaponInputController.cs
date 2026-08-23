@@ -422,8 +422,14 @@ public class PlayerWeaponInputController
                 activeWeaponWheelSide
             );
 
+        int activeSlotIndex =
+            activeWeaponWheelSide == WeaponSlotSide.Left
+                ? activeLeftLoadoutIndex
+                : activeRightLoadoutIndex;
+
         highlightedWeaponSlotIndex =
-            loadout[closestSlotIndex] != null
+            loadout[closestSlotIndex] != null &&
+            closestSlotIndex != activeSlotIndex
                 ? closestSlotIndex
                 : -1;
     }
