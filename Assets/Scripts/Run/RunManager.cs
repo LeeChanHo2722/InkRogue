@@ -11,6 +11,7 @@ public enum RunMode
 public class RunManager : MonoBehaviour
 {
     public const int FloorLoadoutSlotsPerHand = 3;
+    public const int FloorCandidateCount = 3;
 
     [Min(1)]
     public int maxFloor = 3;
@@ -23,6 +24,11 @@ public class RunManager : MonoBehaviour
 
     private readonly List<WeaponDefinition> runInventory =
         new List<WeaponDefinition>();
+
+    private readonly List<FloorDefinition> floorCandidates =
+        new List<FloorDefinition>(FloorCandidateCount);
+
+    private FloorDefinition selectedNextFloor;
 
     private readonly WeaponDefinition[] leftFloorLoadout =
         new WeaponDefinition[FloorLoadoutSlotsPerHand];
@@ -39,6 +45,12 @@ public class RunManager : MonoBehaviour
     public IReadOnlyList<WeaponDefinition> RunInventory =>
         runInventory;
 
+    public IReadOnlyList<FloorDefinition> FloorCandidates =>
+        floorCandidates;
+
+    public FloorDefinition SelectedNextFloor =>
+        selectedNextFloor;
+
     public IReadOnlyList<WeaponDefinition> LeftFloorLoadout =>
         leftFloorLoadout;
 
@@ -54,6 +66,7 @@ public class RunManager : MonoBehaviour
     {
         runInventory.Clear();
         ClearFloorLoadouts();
+        ClearFloorSelection();
         currentMode = mode;
 
         if (startingWeapons == null)
@@ -67,6 +80,59 @@ public class RunManager : MonoBehaviour
 
         foreach (WeaponDefinition weapon in startingWeapons)
             TryAddRunWeapon(weapon);
+    }
+
+    public bool TryPrepareFloorCandidates(
+        IReadOnlyList<FloorDefinition> source)
+    {
+        ClearFloorSelection();
+
+        if (source == null)
+            return false;
+
+        List<FloorDefinition> uniqueCandidates =
+            new List<FloorDefinition>();
+
+        for (int i = 0; i < source.Count; i++)
+        {
+            FloorDefinition candidate = source[i];
+
+            if (candidate != null &&
+                !uniqueCandidates.Contains(candidate))
+            {
+                uniqueCandidates.Add(candidate);
+            }
+        }
+
+        if (uniqueCandidates.Count < FloorCandidateCount)
+            return false;
+
+        for (int i = 0; i < FloorCandidateCount; i++)
+        {
+            int swapIndex =
+                Random.Range(i, uniqueCandidates.Count);
+
+            FloorDefinition candidate = uniqueCandidates[i];
+            uniqueCandidates[i] = uniqueCandidates[swapIndex];
+            uniqueCandidates[swapIndex] = candidate;
+
+            floorCandidates.Add(uniqueCandidates[i]);
+        }
+
+        return true;
+    }
+
+    public bool TrySelectFloorCandidate(
+        FloorDefinition candidate)
+    {
+        if (candidate == null ||
+            !floorCandidates.Contains(candidate))
+        {
+            return false;
+        }
+
+        selectedNextFloor = candidate;
+        return true;
     }
 
     public bool TryAddRunWeapon(WeaponDefinition weapon)
@@ -198,6 +264,12 @@ public class RunManager : MonoBehaviour
             0,
             rightFloorLoadout.Length
         );
+    }
+
+    private void ClearFloorSelection()
+    {
+        floorCandidates.Clear();
+        selectedNextFloor = null;
     }
 
     public void AdvanceFloor()
