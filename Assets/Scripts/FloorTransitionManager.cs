@@ -13,6 +13,9 @@ public class FloorTransitionManager : MonoBehaviour
 
     public UpgradeManager upgradeManager;
 
+    [SerializeField]
+    private FloorSelectionUI floorSelectionUI;
+
     public InkScreenWipe screenWipe;
 
     public FloorStartTitleUI floorStartTitleUI;
@@ -685,18 +688,75 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        if (floorManager == null ||
-            floorManager.runManager == null ||
-            !floorManager.runManager
-                .TryPrepareFloorCandidates(
-                    floorManager.FloorDefinitions
-                ))
+        RunManager runManager =
+            floorManager != null
+                ? floorManager.runManager
+                : null;
+
+
+        bool candidatesPrepared =
+            runManager != null &&
+            runManager.TryPrepareFloorCandidates(
+                floorManager.FloorDefinitions
+            );
+
+
+        if (candidatesPrepared &&
+            floorSelectionUI != null &&
+            floorSelectionUI.ShowCandidates(
+                runManager.FloorCandidates,
+                FloorCandidateSelected
+            ))
+        {
+            if (upgradeManager != null)
+                upgradeManager.HideUpgrades();
+
+
+            return;
+        }
+
+
+        Debug.LogWarning(
+            "Floor Selection is unavailable. Continuing legacy progression.",
+            this
+        );
+
+
+        StartCoroutine(
+            NextFloorRoutine()
+        );
+    }
+
+
+    private void FloorCandidateSelected(
+        FloorDefinition candidate)
+    {
+        if (!waitingForUpgrade ||
+            transitionRunning)
+        {
+            return;
+        }
+
+
+        RunManager runManager =
+            floorManager != null
+                ? floorManager.runManager
+                : null;
+
+
+        if (runManager == null ||
+            !runManager.TrySelectFloorCandidate(candidate))
         {
             Debug.LogWarning(
-                "Floor Selection candidates could not be prepared.",
+                "Floor Selection candidate could not be selected.",
                 this
             );
+            return;
         }
+
+
+        if (floorSelectionUI != null)
+            floorSelectionUI.Hide();
 
 
         StartCoroutine(
