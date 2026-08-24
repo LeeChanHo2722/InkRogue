@@ -41,3 +41,8 @@ MonoBehaviour:
         count: 2
       maxWaveDuration: 20
       killRatioToAdvance: 0.667
+  floorId: 2 F
+  difficulty: 1
+  enemyComposition: {fileID: 0}
+  pairedPower: {fileID: 0}
+  map: {fileID: 0}
