@@ -529,6 +529,7 @@ MonoBehaviour:
   floorManager: {fileID: 1676118673}
   upgradeManager: {fileID: 1359112927}
   floorSelectionUI: {fileID: 2082629174}
+  mapSceneLoader: {fileID: 240151137}
   screenWipe: {fileID: 703787618}
   floorStartTitleUI: {fileID: 1719803304}
   mapReferences: {fileID: 0}
