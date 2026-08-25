@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,6 +17,14 @@ public class MapSceneLoader : MonoBehaviour
 
     private bool loadStarted =
         false;
+
+    private bool mapSwitchInProgress;
+
+    private Scene currentMapScene;
+
+    private MapSceneReferences currentMapReferences;
+
+    private BossSceneReferences currentBossReferences;
 
 
     private void Start()
@@ -78,6 +87,63 @@ public class MapSceneLoader : MonoBehaviour
 
         StartCoroutine(
             LoadMapRoutine()
+        );
+    }
+
+
+    public void SwitchMap(
+        MapDefinition mapDefinition,
+        Action<bool> onCompleted)
+    {
+        if (mapDefinition == null)
+        {
+            Debug.LogError(
+                "MapSceneLoader cannot switch to a null MapDefinition.",
+                this
+            );
+            onCompleted?.Invoke(false);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(mapDefinition.SceneName))
+        {
+            Debug.LogError(
+                "MapSceneLoader requires MapDefinition.SceneName.",
+                this
+            );
+            onCompleted?.Invoke(false);
+            return;
+        }
+
+        if (mapSwitchInProgress)
+        {
+            Debug.LogError(
+                "MapSceneLoader cannot start another map switch "
+                + "while one is in progress.",
+                this
+            );
+            onCompleted?.Invoke(false);
+            return;
+        }
+
+        if (!currentMapScene.IsValid() ||
+            !currentMapScene.isLoaded)
+        {
+            Debug.LogError(
+                "MapSceneLoader cannot switch maps before the initial "
+                + "Map Scene finishes loading.",
+                this
+            );
+            onCompleted?.Invoke(false);
+            return;
+        }
+
+        mapSwitchInProgress = true;
+        StartCoroutine(
+            SwitchMapRoutine(
+                mapDefinition.SceneName,
+                onCompleted
+            )
         );
     }
 
@@ -255,49 +321,11 @@ public class MapSceneLoader : MonoBehaviour
         }
 
 
-        MapSceneReferences mapReferences =
-            null;
-
-        BossSceneReferences bossReferences =
-            null;
-
-
-        GameObject[] rootObjects =
-            mapScene.GetRootGameObjects();
-
-
-        for (int i = 0; i < rootObjects.Length; i++)
-        {
-            if (mapReferences == null)
-            {
-                mapReferences =
-                    rootObjects[i]
-                        .GetComponentInChildren<
-                            MapSceneReferences
-                        >(
-                            true
-                        );
-            }
-
-
-            if (bossReferences == null)
-            {
-                bossReferences =
-                    rootObjects[i]
-                        .GetComponentInChildren<
-                            BossSceneReferences
-                        >(
-                            true
-                        );
-            }
-
-
-            if (mapReferences != null &&
-                bossReferences != null)
-            {
-                break;
-            }
-        }
+        FindSceneReferences(
+            mapScene,
+            out MapSceneReferences mapReferences,
+            out BossSceneReferences bossReferences
+        );
 
 
         if (mapReferences == null)
@@ -364,6 +392,284 @@ public class MapSceneLoader : MonoBehaviour
         }
 
 
+        currentMapScene = mapScene;
+        currentMapReferences = mapReferences;
+        currentBossReferences = bossReferences;
+
+
         floorTransitionManager.BeginFirstFloor();
     }
+
+
+    private IEnumerator SwitchMapRoutine(
+        string sceneName,
+        Action<bool> onCompleted)
+    {
+        Scene previousMapScene = currentMapScene;
+        Scene targetScene = SceneManager.GetSceneByName(sceneName);
+        bool loadedForSwitch = false;
+
+        if (!targetScene.isLoaded)
+        {
+            AsyncOperation loadOperation =
+                SceneManager.LoadSceneAsync(
+                    sceneName,
+                    LoadSceneMode.Additive
+                );
+
+            if (loadOperation == null)
+            {
+                FailMapSwitch(
+                    sceneName,
+                    "failed to start loading the target Scene.",
+                    targetScene,
+                    false,
+                    false,
+                    onCompleted
+                );
+                yield break;
+            }
+
+            loadedForSwitch = true;
+            yield return loadOperation;
+            targetScene = SceneManager.GetSceneByName(sceneName);
+        }
+
+        if (!targetScene.IsValid() || !targetScene.isLoaded)
+        {
+            FailMapSwitch(
+                sceneName,
+                "could not access the loaded target Scene.",
+                targetScene,
+                loadedForSwitch,
+                false,
+                onCompleted
+            );
+            yield break;
+        }
+
+        FindSceneReferences(
+            targetScene,
+            out MapSceneReferences mapReferences,
+            out BossSceneReferences bossReferences
+        );
+
+        if (mapReferences == null ||
+            !HasCompleteBossReferences(bossReferences))
+        {
+            FailMapSwitch(
+                sceneName,
+                "requires complete MapSceneReferences and "
+                + "BossSceneReferences.",
+                targetScene,
+                loadedForSwitch,
+                false,
+                onCompleted
+            );
+            yield break;
+        }
+
+        if (!floorTransitionManager.BindMapReferences(mapReferences))
+        {
+            FailMapSwitch(
+                sceneName,
+                "failed to bind MapSceneReferences.",
+                targetScene,
+                loadedForSwitch,
+                false,
+                onCompleted
+            );
+            yield break;
+        }
+
+        if (!bossArenaTransitionManager.BindBossReferences(
+                bossReferences
+            ))
+        {
+            FailMapSwitch(
+                sceneName,
+                "failed to bind BossSceneReferences.",
+                targetScene,
+                loadedForSwitch,
+                true,
+                onCompleted
+            );
+            yield break;
+        }
+
+        if (!SceneManager.SetActiveScene(targetScene))
+        {
+            FailMapSwitch(
+                sceneName,
+                "failed to set the target Scene active.",
+                targetScene,
+                loadedForSwitch,
+                true,
+                onCompleted
+            );
+            yield break;
+        }
+
+        currentMapScene = targetScene;
+        currentMapReferences = mapReferences;
+        currentBossReferences = bossReferences;
+
+        if (previousMapScene.IsValid() &&
+            previousMapScene.isLoaded &&
+            previousMapScene.handle != targetScene.handle &&
+            previousMapScene.handle != gameObject.scene.handle)
+        {
+            AsyncOperation unloadOperation =
+                SceneManager.UnloadSceneAsync(previousMapScene);
+
+            if (unloadOperation == null)
+            {
+                Debug.LogError(
+                    "MapSceneLoader switched to Scene '"
+                    + sceneName
+                    + "' but could not unload previous Map Scene '"
+                    + previousMapScene.name
+                    + "'.",
+                    this
+                );
+                CompleteMapSwitch(onCompleted, false);
+                yield break;
+            }
+
+            yield return unloadOperation;
+        }
+
+        CompleteMapSwitch(onCompleted, true);
+    }
+
+
+    private void FailMapSwitch(
+        string sceneName,
+        string message,
+        Scene targetScene,
+        bool unloadTarget,
+        bool restoreBindings,
+        Action<bool> onCompleted)
+    {
+        Debug.LogError(
+            "MapSceneLoader could not switch to Scene '"
+            + sceneName
+            + "': "
+            + message,
+            this
+        );
+
+        if (restoreBindings && !RestoreCurrentMap())
+        {
+            Debug.LogError(
+                "MapSceneLoader failed to restore the current Map "
+                + "bindings after a switch failure.",
+                this
+            );
+        }
+
+        if (unloadTarget &&
+            targetScene.IsValid() &&
+            targetScene.isLoaded &&
+            targetScene.handle != currentMapScene.handle)
+        {
+            SceneManager.UnloadSceneAsync(targetScene);
+        }
+
+        CompleteMapSwitch(onCompleted, false);
+    }
+
+
+    private bool RestoreCurrentMap()
+    {
+        bool mapRestored =
+            currentMapReferences != null &&
+            floorTransitionManager.BindMapReferences(
+                currentMapReferences
+            );
+
+        bool bossRestored =
+            currentBossReferences != null &&
+            bossArenaTransitionManager.BindBossReferences(
+                currentBossReferences
+            );
+
+        bool activeSceneRestored =
+            currentMapScene.IsValid() &&
+            currentMapScene.isLoaded &&
+            SceneManager.SetActiveScene(currentMapScene);
+
+        return mapRestored &&
+            bossRestored &&
+            activeSceneRestored;
+    }
+
+
+    private static void FindSceneReferences(
+        Scene scene,
+        out MapSceneReferences mapReferences,
+        out BossSceneReferences bossReferences)
+    {
+        mapReferences = null;
+        bossReferences = null;
+
+        GameObject[] rootObjects = scene.GetRootGameObjects();
+
+        for (int i = 0; i < rootObjects.Length; i++)
+        {
+            if (mapReferences == null)
+            {
+                mapReferences =
+                    rootObjects[i]
+                        .GetComponentInChildren<MapSceneReferences>(true);
+            }
+
+            if (bossReferences == null)
+            {
+                bossReferences =
+                    rootObjects[i]
+                        .GetComponentInChildren<BossSceneReferences>(true);
+            }
+
+            if (mapReferences != null && bossReferences != null)
+                return;
+        }
+    }
+
+
+    private static bool HasCompleteBossReferences(
+        BossSceneReferences bossReferences)
+    {
+        if (bossReferences == null ||
+            bossReferences.normalArenaRoot == null ||
+            bossReferences.bossArenaRoot == null ||
+            bossReferences.bossGround == null ||
+            bossReferences.bossCameraBounds == null ||
+            bossReferences.bossPlayerSpawnPoint == null ||
+            bossReferences.bossSpawnPoint == null ||
+            bossReferences.addSpawnPoints == null ||
+            bossReferences.addSpawnPoints.Length == 0)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < bossReferences.addSpawnPoints.Length; i++)
+        {
+            if (bossReferences.addSpawnPoints[i] == null)
+                return false;
+        }
+
+        return true;
+    }
+
+
+    private void CompleteMapSwitch(
+        Action<bool> onCompleted,
+        bool succeeded)
+    {
+        mapSwitchInProgress = false;
+        onCompleted?.Invoke(succeeded);
+    }
+
+
 }
