@@ -98,9 +98,27 @@ public partial class FloorManager
             return false;
         }
 
-        // Migration seam: replace this temporary runtime seed with
-        // the selected Floor candidate seed in Step 5.
-        int seed = encounterSeedSource.Next();
+        int seed;
+
+        if (runManager != null
+            && runManager.HasCurrentEncounterSeed)
+        {
+            seed = runManager.CurrentEncounterSeed;
+        }
+        else
+        {
+            // Migration fallback: no fixed candidate seed is available,
+            // so this Floor uses a temporary runtime seed.
+            seed = encounterSeedSource.Next();
+
+            Debug.LogError(
+                "Encounter seed is not fixed for Floor "
+                + CurrentFloor
+                + ". Falling back to a temporary runtime seed "
+                + seed
+                + ".",
+                this);
+        }
 
         if (!EncounterPlanGenerator.TryGenerate(
                 difficulty,
