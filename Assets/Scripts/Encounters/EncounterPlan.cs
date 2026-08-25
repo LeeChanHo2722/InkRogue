@@ -13,8 +13,13 @@ public class EncounterPlan
 public class EncounterWavePlan
 {
     public int waveIndex;
+    public int seed;
     public int waveQuota;
     public EncounterProfileDefinition profile;
     public int maxAlive;
     public float refillDelay;
+    public EncounterEnemyRatio[] enemyRatios =
+        Array.Empty<EncounterEnemyRatio>();
+    public WaveEnemyType[] spawnBag =
+        Array.Empty<WaveEnemyType>();
 }
