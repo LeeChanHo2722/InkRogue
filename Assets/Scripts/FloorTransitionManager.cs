@@ -16,6 +16,9 @@ public class FloorTransitionManager : MonoBehaviour
     [SerializeField]
     private FloorSelectionUI floorSelectionUI;
 
+    [SerializeField]
+    private MapSceneLoader mapSceneLoader;
+
     public InkScreenWipe screenWipe;
 
     public FloorStartTitleUI floorStartTitleUI;
@@ -787,6 +790,91 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
+        RunManager runManager =
+            floorManager != null
+                ? floorManager.runManager
+                : null;
+
+
+        FloorDefinition selectedFloor =
+            runManager != null
+                ? runManager.SelectedNextFloor
+                : null;
+
+
+        if (selectedFloor != null)
+        {
+            MapDefinition selectedMap =
+                selectedFloor.Map;
+
+
+            if (selectedMap == null)
+            {
+                Debug.LogWarning(
+                    "Selected FloorDefinition has no MapDefinition. "
+                    + "Continuing on the current Map.",
+                    this
+                );
+            }
+            else
+            {
+                if (mapSceneLoader == null)
+                {
+                    Debug.LogError(
+                        "FloorTransitionManager requires MapSceneLoader "
+                        + "to apply the selected Floor Map.",
+                        this
+                    );
+
+
+                    yield return StartCoroutine(
+                        RestoreFloorSelectionAfterMapSwitchFailure(
+                            runManager
+                        )
+                    );
+                    yield break;
+                }
+
+
+                bool mapSwitchCompleted =
+                    false;
+
+
+                bool mapSwitchSucceeded =
+                    false;
+
+
+                mapSceneLoader.SwitchMap(
+                    selectedMap,
+                    succeeded =>
+                    {
+                        mapSwitchSucceeded =
+                            succeeded;
+
+
+                        mapSwitchCompleted =
+                            true;
+                    }
+                );
+
+
+                while (!mapSwitchCompleted)
+                    yield return null;
+
+
+                if (!mapSwitchSucceeded)
+                {
+                    yield return StartCoroutine(
+                        RestoreFloorSelectionAfterMapSwitchFailure(
+                            runManager
+                        )
+                    );
+                    yield break;
+                }
+            }
+        }
+
+
         if (playerLifeManager != null)
         {
             playerLifeManager
@@ -883,6 +971,45 @@ public class FloorTransitionManager : MonoBehaviour
 
 
         UnlockPlayer();
+
+
+        transitionRunning =
+            false;
+    }
+
+
+    private IEnumerator RestoreFloorSelectionAfterMapSwitchFailure(
+        RunManager runManager)
+    {
+        waitingForUpgrade =
+            true;
+
+
+        bool selectionRestored =
+            floorSelectionUI != null &&
+            runManager != null &&
+            floorSelectionUI.ShowCandidates(
+                runManager.FloorCandidates,
+                FloorCandidateSelected
+            );
+
+
+        if (!selectionRestored)
+        {
+            Debug.LogError(
+                "FloorTransitionManager could not restore "
+                + "Floor Selection after Map switching failed.",
+                this
+            );
+        }
+
+
+        if (screenWipe != null)
+        {
+            yield return StartCoroutine(
+                screenWipe.Reveal()
+            );
+        }
 
 
         transitionRunning =
