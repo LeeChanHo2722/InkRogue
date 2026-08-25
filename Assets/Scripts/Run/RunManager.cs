@@ -25,19 +25,21 @@ public class RunManager : MonoBehaviour
     private readonly List<WeaponDefinition> runInventory =
         new List<WeaponDefinition>();
 
-    private readonly List<FloorDefinition> floorCandidates =
-        new List<FloorDefinition>(FloorCandidateCount);
+    private static readonly FloorDifficulty[] CandidateDifficulties =
+    {
+        FloorDifficulty.Easy,
+        FloorDifficulty.Normal,
+        FloorDifficulty.Hard
+    };
 
-    private readonly Dictionary<FloorDefinition, int>
-        candidateEncounterSeeds =
-            new Dictionary<FloorDefinition, int>(
-                FloorCandidateCount);
+    private readonly List<FloorCandidate> floorCandidates =
+        new List<FloorCandidate>(FloorCandidateCount);
 
-    private FloorDefinition selectedNextFloor;
+    private FloorCandidate selectedCandidate;
 
-    private int currentEncounterSeed;
+    private int firstFloorEncounterSeed;
 
-    private bool hasCurrentEncounterSeed;
+    private bool hasFirstFloorEncounterSeed;
 
     private readonly WeaponDefinition[] leftFloorLoadout =
         new WeaponDefinition[FloorLoadoutSlotsPerHand];
@@ -54,17 +56,20 @@ public class RunManager : MonoBehaviour
     public IReadOnlyList<WeaponDefinition> RunInventory =>
         runInventory;
 
-    public IReadOnlyList<FloorDefinition> FloorCandidates =>
+    public IReadOnlyList<FloorCandidate> FloorCandidates =>
         floorCandidates;
 
+    public FloorCandidate SelectedCandidate =>
+        selectedCandidate;
+
     public FloorDefinition SelectedNextFloor =>
-        selectedNextFloor;
+        selectedCandidate?.Floor;
 
-    public int CurrentEncounterSeed =>
-        currentEncounterSeed;
+    public int FirstFloorEncounterSeed =>
+        firstFloorEncounterSeed;
 
-    public bool HasCurrentEncounterSeed =>
-        hasCurrentEncounterSeed;
+    public bool HasFirstFloorEncounterSeed =>
+        hasFirstFloorEncounterSeed;
 
     public IReadOnlyList<WeaponDefinition> LeftFloorLoadout =>
         leftFloorLoadout;
@@ -83,8 +88,8 @@ public class RunManager : MonoBehaviour
         ClearFloorLoadouts();
         ClearFloorSelection();
         currentMode = mode;
-        currentEncounterSeed = CreateEncounterSeed();
-        hasCurrentEncounterSeed = true;
+        firstFloorEncounterSeed = CreateEncounterSeed();
+        hasFirstFloorEncounterSeed = true;
 
         if (startingWeapons == null)
         {
@@ -133,16 +138,21 @@ public class RunManager : MonoBehaviour
             uniqueCandidates[i] = uniqueCandidates[swapIndex];
             uniqueCandidates[swapIndex] = candidate;
 
-            floorCandidates.Add(uniqueCandidates[i]);
-            candidateEncounterSeeds[uniqueCandidates[i]] =
-                CreateEncounterSeed();
+            floorCandidates.Add(
+                new FloorCandidate(
+                    uniqueCandidates[i],
+                    CandidateDifficulties[
+                        Random.Range(
+                            0,
+                            CandidateDifficulties.Length)],
+                    CreateEncounterSeed()));
         }
 
         return true;
     }
 
     public bool TrySelectFloorCandidate(
-        FloorDefinition candidate)
+        FloorCandidate candidate)
     {
         if (candidate == null ||
             !floorCandidates.Contains(candidate))
@@ -150,22 +160,7 @@ public class RunManager : MonoBehaviour
             return false;
         }
 
-        if (!candidateEncounterSeeds.TryGetValue(
-                candidate,
-                out int candidateSeed))
-        {
-            Debug.LogError(
-                "RunManager has no Encounter seed for the Floor candidate '"
-                + candidate.name
-                + "'.",
-                this
-            );
-            return false;
-        }
-
-        selectedNextFloor = candidate;
-        currentEncounterSeed = candidateSeed;
-        hasCurrentEncounterSeed = true;
+        selectedCandidate = candidate;
         return true;
     }
 
@@ -303,9 +298,8 @@ public class RunManager : MonoBehaviour
     private void ClearFloorSelection()
     {
         floorCandidates.Clear();
-        candidateEncounterSeeds.Clear();
-        selectedNextFloor = null;
-        hasCurrentEncounterSeed = false;
+        selectedCandidate = null;
+        hasFirstFloorEncounterSeed = false;
     }
 
     private static int CreateEncounterSeed()

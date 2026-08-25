@@ -85,25 +85,50 @@ public partial class FloorManager
         }
 
         bool isFirstFloor = CurrentFloor == 1;
+        FloorCandidate candidate =
+            runManager != null
+                ? runManager.SelectedCandidate
+                : null;
+
+        FloorDifficulty floorDifficulty;
+
+        if (isFirstFloor)
+        {
+            floorDifficulty = FloorDifficulty.Easy;
+        }
+        else if (candidate != null)
+        {
+            floorDifficulty = candidate.Difficulty;
+        }
+        else
+        {
+            // Legacy fallback: no runtime candidate, so the
+            // FloorDefinition difficulty is used instead.
+            floorDifficulty = floorDefinition.Difficulty;
+        }
+
         EncounterDifficultyDefinition difficulty =
-            isFirstFloor
-                ? easyEncounterDifficulty
-                : GetEncounterDifficulty(
-                    floorDefinition.Difficulty);
+            GetEncounterDifficulty(floorDifficulty);
 
         if (difficulty == null)
         {
             error = $"Encounter Difficulty is not assigned for "
-                + $"{(isFirstFloor ? FloorDifficulty.Easy : floorDefinition.Difficulty)}.";
+                + $"{floorDifficulty}.";
             return false;
         }
 
         int seed;
 
-        if (runManager != null
-            && runManager.HasCurrentEncounterSeed)
+        if (isFirstFloor
+            && runManager != null
+            && runManager.HasFirstFloorEncounterSeed)
         {
-            seed = runManager.CurrentEncounterSeed;
+            seed = runManager.FirstFloorEncounterSeed;
+        }
+        else if (!isFirstFloor
+            && candidate != null)
+        {
+            seed = candidate.EncounterSeed;
         }
         else
         {

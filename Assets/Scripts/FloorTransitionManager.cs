@@ -732,7 +732,7 @@ public class FloorTransitionManager : MonoBehaviour
 
 
     private void FloorCandidateSelected(
-        FloorDefinition candidate)
+        FloorCandidate candidate)
     {
         if (!waitingForUpgrade ||
             transitionRunning)
