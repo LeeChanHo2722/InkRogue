@@ -1,7 +1,7 @@
 using TMPro;
 using UnityEngine;
 
-public class FloorManager : MonoBehaviour
+public partial class FloorManager : MonoBehaviour
 {
     // ==================================================
     // Enemy Prefabs
@@ -176,6 +176,9 @@ public class FloorManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        StopEncounterCoroutines();
+
+
         if (floorObjective != null)
         {
             floorObjective.Completed -=
@@ -234,6 +237,10 @@ public class FloorManager : MonoBehaviour
     private void Update()
     {
         if (floorCleared)
+            return;
+
+
+        if (encounterRuntimeActive)
             return;
 
 
@@ -358,6 +365,9 @@ public class FloorManager : MonoBehaviour
 
     public void SpawnCurrentFloor()
     {
+        ResetEncounterRuntime();
+
+
         if (spawnPoints == null ||
             spawnPoints.Length == 0)
         {
@@ -401,6 +411,21 @@ public class FloorManager : MonoBehaviour
                 .gameObject
                 .SetActive(false);
         }
+
+
+        if (TryStartEncounterFloor(out string encounterError))
+        {
+            return;
+        }
+
+
+        Debug.LogWarning(
+            "ENCOUNTER FALLBACK | Floor "
+            + CurrentFloor
+            + " | "
+            + encounterError
+            + " Using legacy FloorWaveData.",
+            this);
 
 
         FloorWaveData floorData =
@@ -624,13 +649,13 @@ public class FloorManager : MonoBehaviour
     // Spawn Enemy
     // ==================================================
 
-    private void SpawnEnemy(
+    private bool SpawnEnemy(
         GameObject prefab,
         int waveIndex,
         int localSpawnIndex)
     {
         if (prefab == null)
-            return;
+            return false;
 
 
         if (spawnPoints == null ||
@@ -643,7 +668,7 @@ public class FloorManager : MonoBehaviour
             );
 
 
-            return;
+            return false;
         }
 
 
@@ -662,7 +687,7 @@ public class FloorManager : MonoBehaviour
 
 
         if (spawnPoint == null)
-            return;
+            return false;
 
 
         GameObject enemy =
@@ -708,6 +733,9 @@ public class FloorManager : MonoBehaviour
         waveSpawnCounts[
             waveIndex
         ]++;
+
+
+        return true;
     }
 
 
@@ -791,6 +819,16 @@ public class FloorManager : MonoBehaviour
             ]++;
         }
 
+
+        if (encounterRuntimeActive)
+        {
+            HandleEncounterEnemyDefeated(
+                sourceWaveIndex);
+
+
+            CheckFloorClear();
+            return;
+        }
 
 
         CheckFloorClear();
@@ -927,6 +965,9 @@ public class FloorManager : MonoBehaviour
     {
         if (floorCleared)
             return;
+
+
+        StopEncounterCoroutines();
 
 
         floorCleared =

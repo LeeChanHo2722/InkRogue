@@ -12,10 +12,7 @@ public sealed class EliminateAllObjective : FloorObjective
         if (floorManager == null)
             return;
 
-        if (!floorManager.IsLastWaveStarted)
-            return;
-
-        if (floorManager.RemainingEnemies > 0)
+        if (!floorManager.IsFloorCombatComplete)
             return;
 
         Complete();

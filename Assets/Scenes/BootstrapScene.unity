@@ -14727,6 +14727,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08f2aeea816adaa43900783d99775b16, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FloorManager
+  easyEncounterDifficulty: {fileID: 11400000, guid: 12f79357ab7445b3ab0101110824bc96,
+    type: 2}
+  normalEncounterDifficulty: {fileID: 11400000, guid: dffe20a885c048a7bab71f6e43cfdf61,
+    type: 2}
+  hardEncounterDifficulty: {fileID: 11400000, guid: 402523264c7e478a80b635bb6a63f736,
+    type: 2}
+  encounterInterWaveDelay: 0.25
   chaserPrefab: {fileID: 7448081891523181985, guid: 839407238f181c84b874d98b33196af7,
     type: 3}
   shooterPrefab: {fileID: 174283713666926076, guid: b66344661d32f86479619529dcd073ea,
