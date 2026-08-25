@@ -138,6 +138,12 @@ public class MapSceneLoader : MonoBehaviour
             return;
         }
 
+        if (currentMapScene.name == mapDefinition.SceneName)
+        {
+            onCompleted?.Invoke(TryReuseCurrentMap());
+            return;
+        }
+
         mapSwitchInProgress = true;
         StartCoroutine(
             SwitchMapRoutine(
@@ -577,6 +583,52 @@ public class MapSceneLoader : MonoBehaviour
         }
 
         CompleteMapSwitch(onCompleted, false);
+    }
+
+
+    private bool TryReuseCurrentMap()
+    {
+        if (currentMapReferences == null ||
+            !HasCompleteBossReferences(currentBossReferences))
+        {
+            Debug.LogError(
+                "MapSceneLoader cannot reuse Scene '"
+                + currentMapScene.name
+                + "' because its Scene references are incomplete.",
+                this
+            );
+            return false;
+        }
+
+        if (!floorTransitionManager.BindMapReferences(
+                currentMapReferences
+            ))
+        {
+            Debug.LogError(
+                "MapSceneLoader failed to rebind MapSceneReferences "
+                + "for Scene '"
+                + currentMapScene.name
+                + "'.",
+                this
+            );
+            return false;
+        }
+
+        if (!bossArenaTransitionManager.BindBossReferences(
+                currentBossReferences
+            ))
+        {
+            Debug.LogError(
+                "MapSceneLoader failed to rebind BossSceneReferences "
+                + "for Scene '"
+                + currentMapScene.name
+                + "'.",
+                this
+            );
+            return false;
+        }
+
+        return true;
     }
 
 
