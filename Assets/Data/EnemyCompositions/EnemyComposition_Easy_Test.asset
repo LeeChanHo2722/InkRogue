@@ -9,9 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 633ba3b07c937bb40906d06a58b8f174, type: 3}
-  m_Name: Floor_01
-  m_EditorClassIdentifier: Assembly-CSharp::FloorDefinition
+  m_Script: {fileID: 11500000, guid: ba4d47704cfc896438b2405ce3a33d84, type: 3}
+  m_Name: EnemyComposition_Easy_Test
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyCompositionDefinition
+  compositionId: ENEMY_COMPOSITION_EASY_TEST
   floorData:
     waves:
     - enemies:
@@ -39,8 +40,3 @@ MonoBehaviour:
         count: 1
       maxWaveDuration: 0
       killRatioToAdvance: 0.667
-  floorId: 1 F
-  difficulty: 0
-  enemyComposition: {fileID: 11400000, guid: e1f2a3b4c5d6478890abcdef12345678, type: 2}
-  pairedPower: {fileID: 0}
-  map: {fileID: 0}

@@ -9,38 +9,36 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 633ba3b07c937bb40906d06a58b8f174, type: 3}
-  m_Name: Floor_01
-  m_EditorClassIdentifier: Assembly-CSharp::FloorDefinition
+  m_Script: {fileID: 11500000, guid: ba4d47704cfc896438b2405ce3a33d84, type: 3}
+  m_Name: EnemyComposition_Hard_Test
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyCompositionDefinition
+  compositionId: ENEMY_COMPOSITION_HARD_TEST
   floorData:
     waves:
     - enemies:
       - enemyType: 0
-        count: 2
-      - enemyType: 4
-        count: 2
-      maxWaveDuration: 20
-      killRatioToAdvance: 0.667
-    - enemies:
-      - enemyType: 0
-        count: 2
+        count: 6
       - enemyType: 1
-        count: 1
+        count: 2
       - enemyType: 4
         count: 2
       maxWaveDuration: 20
       killRatioToAdvance: 0.667
     - enemies:
+      - enemyType: 2
+        count: 3
       - enemyType: 0
-        count: 2
+        count: 3
       - enemyType: 3
-        count: 1
-      - enemyType: 1
-        count: 1
-      maxWaveDuration: 0
+        count: 2
+      maxWaveDuration: 20
       killRatioToAdvance: 0.667
-  floorId: 1 F
-  difficulty: 0
-  enemyComposition: {fileID: 11400000, guid: e1f2a3b4c5d6478890abcdef12345678, type: 2}
-  pairedPower: {fileID: 0}
-  map: {fileID: 0}
+    - enemies:
+      - enemyType: 2
+        count: 4
+      - enemyType: 3
+        count: 3
+      - enemyType: 1
+        count: 3
+      maxWaveDuration: 20
+      killRatioToAdvance: 0.667

@@ -33,6 +33,9 @@ public class FloorManager : MonoBehaviour
     private FloorDefinition[] floorDefinitions;
 
 
+    private FloorDefinition legacyWarningFloorDefinition;
+
+
     [Header("Run")]
 
     public RunManager runManager;
@@ -817,13 +820,51 @@ public class FloorManager : MonoBehaviour
         GetCurrentFloorData()
     {
         FloorDefinition floorDefinition =
+            GetCurrentFloorDefinition();
+
+
+        if (floorDefinition == null)
+            return null;
+
+
+        if (floorDefinition.EnemyComposition != null)
+        {
+            return floorDefinition
+                .EnemyComposition
+                .FloorData;
+        }
+
+
+        if (legacyWarningFloorDefinition != floorDefinition)
+        {
+            legacyWarningFloorDefinition =
+                floorDefinition;
+
+
+            Debug.LogWarning(
+                "FloorManager is using legacy floorData for '"
+                + floorDefinition.name
+                + "'.",
+                this
+            );
+        }
+
+
+        return floorDefinition.floorData;
+    }
+
+
+    private FloorDefinition
+        GetCurrentFloorDefinition()
+    {
+        FloorDefinition selectedFloor =
             runManager != null
                 ? runManager.SelectedNextFloor
                 : null;
 
 
-        if (floorDefinition != null)
-            return floorDefinition.floorData;
+        if (selectedFloor != null)
+            return selectedFloor;
 
 
         int index =
@@ -838,13 +879,7 @@ public class FloorManager : MonoBehaviour
         }
 
 
-        floorDefinition =
-            floorDefinitions[index];
-
-
-        return floorDefinition != null
-            ? floorDefinition.floorData
-            : null;
+        return floorDefinitions[index];
     }
 
 
