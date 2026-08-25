@@ -23,10 +23,10 @@ public class FloorSelectionUI : MonoBehaviour
     private FloorSelectionCard[] cards =
         new FloorSelectionCard[CardCount];
 
-    private readonly FloorDefinition[] displayedCandidates =
-        new FloorDefinition[CardCount];
+    private readonly FloorCandidate[] displayedCandidates =
+        new FloorCandidate[CardCount];
 
-    private Action<FloorDefinition> selected;
+    private Action<FloorCandidate> selected;
     private bool initialized;
 
     private void Awake()
@@ -48,8 +48,8 @@ public class FloorSelectionUI : MonoBehaviour
     }
 
     public bool ShowCandidates(
-        IReadOnlyList<FloorDefinition> candidates,
-        Action<FloorDefinition> onSelected)
+        IReadOnlyList<FloorCandidate> candidates,
+        Action<FloorCandidate> onSelected)
     {
         if (!initialized ||
             candidates == null ||
@@ -63,16 +63,16 @@ public class FloorSelectionUI : MonoBehaviour
 
         for (int i = 0; i < CardCount; i++)
         {
-            FloorDefinition candidate = candidates[i];
+            FloorCandidate candidate = candidates[i];
             displayedCandidates[i] = candidate;
 
-            bool available = candidate != null;
+            bool available = candidate?.Floor != null;
             FloorSelectionCard card = cards[i];
 
             card.button.interactable = available;
             card.floorIdText.text =
                 available
-                    ? candidate.FloorId ?? string.Empty
+                    ? candidate.Floor.FloorId ?? string.Empty
                     : string.Empty;
             card.difficultyText.text =
                 available
@@ -102,7 +102,7 @@ public class FloorSelectionUI : MonoBehaviour
         if (index < 0 || index >= displayedCandidates.Length)
             return;
 
-        FloorDefinition candidate = displayedCandidates[index];
+        FloorCandidate candidate = displayedCandidates[index];
 
         if (candidate != null)
             selected?.Invoke(candidate);
