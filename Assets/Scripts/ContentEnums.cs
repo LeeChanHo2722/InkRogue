@@ -22,3 +22,13 @@ public enum FloorDifficulty
     Normal,
     Hard
 }
+
+public enum EncounterProfile
+{
+    Rush,
+    Crossfire,
+    Territory,
+    Bombardment,
+    Heavy,
+    Mixed
+}

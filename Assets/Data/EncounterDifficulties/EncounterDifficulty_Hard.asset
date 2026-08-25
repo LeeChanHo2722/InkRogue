@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ab2d23078f34d618ebd88ecda907687, type: 3}
+  m_Name: EncounterDifficulty_Hard
+  m_EditorClassIdentifier: Assembly-CSharp::EncounterDifficultyDefinition
+  difficulty: 2
+  minTotalQuota: 23
+  maxTotalQuota: 27
+  baseMaxAlive: 6
+  minRefillDelay: 0.65
+  maxRefillDelay: 0.95
+  profilePool:
+  - profile: {fileID: 11400000, guid: 428ac6ba635544c2b8b4600dadbb66e9, type: 2}
+    weight: 15
+  - profile: {fileID: 11400000, guid: b6e81684273e4dde9e8b7c758476e631, type: 2}
+    weight: 15
+  - profile: {fileID: 11400000, guid: a5fa15b1b95f47f5af3865a9defdbc50, type: 2}
+    weight: 20
+  - profile: {fileID: 11400000, guid: 29b47e77881c475ba1cff8bb451dc958, type: 2}
+    weight: 20
+  - profile: {fileID: 11400000, guid: a5e6e288033945a4917f0ae54dc43ef6, type: 2}
+    weight: 20
+  - profile: {fileID: 11400000, guid: 46b1609c69484fe4b4d2368b466921a4, type: 2}
+    weight: 10
