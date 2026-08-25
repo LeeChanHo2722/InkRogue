@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class FloorLoadoutUI : MonoBehaviour
@@ -21,7 +23,8 @@ public class FloorLoadoutUI : MonoBehaviour
     private Button openButton;
 
     [SerializeField]
-    private Button backButton;
+    [FormerlySerializedAs("backButton")]
+    private Button closeButton;
 
     [Header("Inventory")]
     [SerializeField]
@@ -47,8 +50,19 @@ public class FloorLoadoutUI : MonoBehaviour
             return;
 
         openButton.onClick.AddListener(Open);
-        backButton.onClick.AddListener(Back);
+        closeButton.onClick.AddListener(Close);
         loadoutRoot.SetActive(false);
+    }
+
+    private void Update()
+    {
+        if (initialized &&
+            loadoutRoot.activeSelf &&
+            Keyboard.current != null &&
+            Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            Close();
+        }
     }
 
     public bool TryAssignWeapon(
@@ -98,7 +112,7 @@ public class FloorLoadoutUI : MonoBehaviour
         Refresh();
     }
 
-    private void Back()
+    private void Close()
     {
         loadoutRoot.SetActive(false);
         floorSelectionRoot.SetActive(true);
@@ -168,7 +182,7 @@ public class FloorLoadoutUI : MonoBehaviour
             floorSelectionRoot == null ||
             loadoutRoot == null ||
             openButton == null ||
-            backButton == null ||
+            closeButton == null ||
             inventoryItems == null ||
             inventoryItems.Length == 0 ||
             !ValidateSlots(leftSlots) ||
