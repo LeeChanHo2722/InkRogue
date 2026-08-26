@@ -18,6 +18,10 @@ public partial class FloorManager
     [SerializeField]
     private float encounterInterWaveDelay = 0.25f;
 
+    [Min(0f)]
+    [SerializeField]
+    private float encounterReusedSpawnPointDelay = 0.2f;
+
 
     private readonly EliminationSpawnDirector
         encounterSpawnDirector =
@@ -27,6 +31,10 @@ public partial class FloorManager
         new System.Random();
 
     private EncounterPlan currentEncounterPlan;
+
+    private Coroutine encounterInitialBurstCoroutine;
+
+    private int encounterInitialBurstRemaining;
 
     private Coroutine encounterRefillCoroutine;
 
@@ -63,6 +71,10 @@ public partial class FloorManager
         encounterInterWaveDelay = Mathf.Max(
             0f,
             encounterInterWaveDelay);
+
+        encounterReusedSpawnPointDelay = Mathf.Max(
+            0f,
+            encounterReusedSpawnPointDelay);
     }
 
 
@@ -229,6 +241,7 @@ public partial class FloorManager
             return false;
         }
 
+        StopEncounterInitialBurst();
         StopEncounterRefill();
 
         EncounterWavePlan wave =
@@ -282,9 +295,53 @@ public partial class FloorManager
 
     private void SpawnEncounterEnemiesToCapacity()
     {
-        int spawnAttempts = 0;
+        // The initial burst size is fixed here, at Wave start. Enemies
+        // killed later free capacity for the RefillDelay system, not for
+        // the remaining initial burst rounds.
+        encounterInitialBurstRemaining =
+            encounterSpawnDirector.MaxAlive
+            - encounterSpawnDirector.AliveCount;
 
-        while (encounterSpawnDirector.HasPendingSpawns
+        encounterInitialBurstRemaining -=
+            SpawnEncounterEnemyRound(
+                encounterInitialBurstRemaining);
+
+        if (encounterInitialBurstRemaining <= 0)
+        {
+            return;
+        }
+
+        encounterInitialBurstCoroutine = StartCoroutine(
+            StaggerInitialBurstRoutine(currentWaveIndex));
+    }
+
+
+    // One round fills every Spawn Point at most once, so enemies on
+    // different Spawn Points still appear on the same frame. A Wave that
+    // needs more than one enemy per Spawn Point runs the extra rounds
+    // through StaggerInitialBurstRoutine instead.
+    private int SpawnEncounterEnemyRound(int budget)
+    {
+        if (budget <= 0)
+        {
+            return 0;
+        }
+
+        int roundLimit =
+            spawnPoints != null && spawnPoints.Length > 0
+                ? spawnPoints.Length
+                : budget;
+
+        if (roundLimit > budget)
+        {
+            roundLimit = budget;
+        }
+
+        int spawnAttempts = 0;
+        int spawnedCount = 0;
+
+        while (spawnAttempts < roundLimit
+            && encounterSpawnDirector.HasPendingSpawns
             && encounterSpawnDirector.AliveCount
                 < encounterSpawnDirector.MaxAlive
             && encounterSpawnDirector.TryTakeNext(
@@ -297,6 +354,7 @@ public partial class FloorManager
             if (spawned)
             {
                 encounterSpawnDirector.NotifySpawned();
+                spawnedCount++;
             }
             else
             {
@@ -307,6 +365,45 @@ public partial class FloorManager
         }
 
         AdvanceSpawnCursor(spawnAttempts);
+        return spawnedCount;
+    }
+
+
+    private IEnumerator StaggerInitialBurstRoutine(
+        int waveIndex)
+    {
+        // Loop on the fixed initial burst budget so the routine ends the
+        // moment that budget is spent, instead of holding an extra delay
+        // that could spawn a refill enemy ahead of its RefillDelay.
+        while (encounterInitialBurstRemaining > 0)
+        {
+            yield return new WaitForSeconds(
+                encounterReusedSpawnPointDelay);
+
+            if (!encounterRuntimeActive
+                || floorCleared
+                || encounterWaveTransitioning
+                || currentWaveIndex != waveIndex
+                || !encounterSpawnDirector.HasPendingSpawns)
+            {
+                break;
+            }
+
+            encounterInitialBurstRemaining -=
+                SpawnEncounterEnemyRound(
+                    encounterInitialBurstRemaining);
+
+            if (encounterSpawnDirector.IsWaveComplete)
+            {
+                encounterInitialBurstCoroutine = null;
+                encounterInitialBurstRemaining = 0;
+                CompleteEncounterWave();
+                yield break;
+            }
+        }
+
+        encounterInitialBurstCoroutine = null;
+        encounterInitialBurstRemaining = 0;
     }
 
 
@@ -437,6 +534,7 @@ public partial class FloorManager
             return;
         }
 
+        StopEncounterInitialBurst();
         StopEncounterRefill();
 
         Debug.Log(
@@ -538,6 +636,20 @@ public partial class FloorManager
     }
 
 
+    private void StopEncounterInitialBurst()
+    {
+        encounterInitialBurstRemaining = 0;
+
+        if (encounterInitialBurstCoroutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(encounterInitialBurstCoroutine);
+        encounterInitialBurstCoroutine = null;
+    }
+
+
     private void StopEncounterRefill()
     {
         if (encounterRefillCoroutine == null)
@@ -565,6 +677,7 @@ public partial class FloorManager
 
     private void StopEncounterCoroutines()
     {
+        StopEncounterInitialBurst();
         StopEncounterRefill();
         StopEncounterWaveTransition();
     }
