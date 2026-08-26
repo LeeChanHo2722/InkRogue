@@ -45,4 +45,4 @@ MonoBehaviour:
   difficulty: 1
   enemyComposition: {fileID: 11400000, guid: f1a2b3c4d5e6478890abcdef12345678, type: 2}
   pairedPower: {fileID: 0}
-  map: {fileID: 11400000, guid: 7b702ecbd2ee4c44a9017fd5b1442bd5, type: 2}
+  map: {fileID: 11400000, guid: ccc9f508902df814fb46952797f52852, type: 2}
