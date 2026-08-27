@@ -78,6 +78,9 @@ public partial class FloorManager
 
     private bool encounterWaveTransitioning;
 
+    private FloorEncounterMode currentEncounterMode =
+        FloorEncounterMode.Elimination;
+
 
     private readonly RushSpawnDirector rushSpawnDirector =
         new RushSpawnDirector();
@@ -129,10 +132,47 @@ public partial class FloorManager
 
     private DefenseTarget defenseTarget;
 
+    private bool defenseRestPhase;
+
+    private float defensePhaseRemaining;
+
 
     public bool IsDefenseEncounterActive => defenseRuntimeActive;
 
     public int DefenseAssaultIndex => defenseAssaultIndex;
+
+    public bool IsDefenseRestPhase => defenseRestPhase;
+
+    public float DefensePhaseRemaining => defensePhaseRemaining;
+
+    public DefenseTarget CurrentDefenseTarget => defenseTarget;
+
+
+    // ==================================================
+    // Encounter State (read-only, for HUD)
+    // ==================================================
+
+    public FloorEncounterMode CurrentEncounterMode =>
+        currentEncounterMode;
+
+    // Authoritative "a fight is running" flag, so UI never has to infer it
+    // from floorCleared / wave indices.
+    public bool IsEncounterActive =>
+        encounterRuntimeActive && !floorCleared;
+
+    public int EncounterWaveCount =>
+        currentEncounterPlan != null
+            && currentEncounterPlan.waves != null
+            ? currentEncounterPlan.waves.Length
+            : 0;
+
+    // What the current Elimination Wave still needs cleared: enemies on the
+    // field plus the ones its spawn bag has not released yet.
+    public int RemainingWaveEnemies =>
+        Mathf.Max(
+            0,
+            encounterSpawnDirector.AliveCount
+                + encounterSpawnDirector.PendingCount);
 
 
     public bool IsFloorCombatComplete
@@ -309,6 +349,7 @@ public partial class FloorManager
         }
 
         currentEncounterPlan = plan;
+        currentEncounterMode = encounterMode;
         encounterRuntimeActive = true;
         waveSpawnCounts = new int[plan.waves.Length];
         waveKillCounts = new int[plan.waves.Length];
@@ -418,6 +459,8 @@ public partial class FloorManager
 
         defenseRuntimeActive = true;
         defenseSpawningEnabled = false;
+        defenseRestPhase = false;
+        defensePhaseRemaining = 0f;
         defenseSucceeded = false;
         defenseFailed = false;
         defenseRetryPending = false;
@@ -512,6 +555,8 @@ public partial class FloorManager
             defenseAssaultIndex = index;
             currentWaveIndex = index;
             defenseSpawningEnabled = true;
+            defenseRestPhase = false;
+            defensePhaseRemaining = defenseAssaultDuration;
 
             int enqueued = defenseSpawnDirector.EnqueueAssault(
                 waves[index].spawnBag);
@@ -547,9 +592,14 @@ public partial class FloorManager
 
                 yield return null;
                 assaultElapsed += Time.deltaTime;
+
+                defensePhaseRemaining = Mathf.Max(
+                    0f,
+                    defenseAssaultDuration - assaultElapsed);
             }
 
             defenseSpawningEnabled = false;
+            defensePhaseRemaining = 0f;
 
             Debug.Log(
                 "DEFENSE ASSAULT "
@@ -565,6 +615,9 @@ public partial class FloorManager
                 break;
             }
 
+            defenseRestPhase = true;
+            defensePhaseRemaining = defenseRestDuration;
+
             float restElapsed = 0f;
 
             while (restElapsed < defenseRestDuration)
@@ -577,7 +630,14 @@ public partial class FloorManager
 
                 yield return null;
                 restElapsed += Time.deltaTime;
+
+                defensePhaseRemaining = Mathf.Max(
+                    0f,
+                    defenseRestDuration - restElapsed);
             }
+
+            defenseRestPhase = false;
+            defensePhaseRemaining = 0f;
         }
 
         defenseFlowCoroutine = null;
@@ -1613,6 +1673,8 @@ public partial class FloorManager
         defenseSucceeded = false;
         defenseFailed = false;
         defenseAssaultIndex = 0;
+        defenseRestPhase = false;
+        defensePhaseRemaining = 0f;
         defenseSpawnDirector.Reset();
         UnbindDefenseTarget();
         EncounterTarget.UsePlayerTarget();

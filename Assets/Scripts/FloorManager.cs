@@ -31,6 +31,13 @@ public partial class FloorManager : MonoBehaviour
     private MapSceneReferences currentMapReferences;
 
 
+    // Read-only view for presentation: entries become Unity-null as enemies
+    // die, so callers filter. No separate search system needed.
+    public System.Collections.Generic.IReadOnlyList<EnemyWaveMember>
+        ActiveEncounterEnemies =>
+            activeEncounterEnemies;
+
+
     // ==================================================
     // Floor Definitions
     // ==================================================

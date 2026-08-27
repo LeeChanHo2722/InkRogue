@@ -98,6 +98,40 @@ public class WaveStartUI : MonoBehaviour
         int currentWave,
         int totalWaves)
     {
+        string sub;
+
+
+        if (currentWave >= totalWaves)
+        {
+            sub = "FINAL WAVE";
+        }
+        else if (currentWave == 1)
+        {
+            sub = "GET READY";
+        }
+        else
+        {
+            sub = "ENEMIES INCOMING";
+        }
+
+
+        PlayMessage(
+            "WAVE "
+            + currentWave
+            + " / "
+            + totalWaves,
+            sub
+        );
+    }
+
+
+    // Same enter/hold/exit presentation as a Wave banner, with caller
+    // supplied text. Lets other encounter callouts reuse this instead of
+    // duplicating the animation.
+    public void PlayMessage(
+        string main,
+        string sub)
+    {
         if (currentRoutine != null)
         {
             StopCoroutine(
@@ -106,12 +140,23 @@ public class WaveStartUI : MonoBehaviour
         }
 
 
+        if (mainText != null)
+        {
+            mainText.text =
+                main ?? string.Empty;
+        }
+
+
+        if (subText != null)
+        {
+            subText.text =
+                sub ?? string.Empty;
+        }
+
+
         currentRoutine =
             StartCoroutine(
-                ShowRoutine(
-                    currentWave,
-                    totalWaves
-                )
+                PresentRoutine()
             );
     }
 
@@ -120,45 +165,8 @@ public class WaveStartUI : MonoBehaviour
     // Show Routine
     // ==================================================
 
-    private IEnumerator ShowRoutine(
-        int currentWave,
-        int totalWaves)
+    private IEnumerator PresentRoutine()
     {
-        // ==========================================
-        // Text
-        // ==========================================
-
-        if (mainText != null)
-        {
-            mainText.text =
-                "WAVE "
-                + currentWave
-                + " / "
-                + totalWaves;
-        }
-
-
-        if (subText != null)
-        {
-            if (currentWave >=
-                totalWaves)
-            {
-                subText.text =
-                    "FINAL WAVE";
-            }
-            else if (currentWave == 1)
-            {
-                subText.text =
-                    "GET READY";
-            }
-            else
-            {
-                subText.text =
-                    "ENEMIES INCOMING";
-            }
-        }
-
-
         // ==========================================
         // Initial State
         // ==========================================
