@@ -15780,6 +15780,9 @@ MonoBehaviour:
   defenseRestDuration: 3
   defenseRetryDelay: 0.4
   defenseRetryInvulnerability: 1.5
+  defenseTargetPrefab: {fileID: 5003468480498698902, guid: a17e36e2587b9e44cb1c34bdef8df8c8,
+    type: 3}
+  defenseTargetFallbackOffset: {x: 1.5, y: 0}
   chaserPrefab: {fileID: 7448081891523181985, guid: 839407238f181c84b874d98b33196af7,
     type: 3}
   shooterPrefab: {fileID: 174283713666926076, guid: b66344661d32f86479619529dcd073ea,
