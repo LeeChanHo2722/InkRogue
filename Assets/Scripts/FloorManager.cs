@@ -28,6 +28,9 @@ public partial class FloorManager : MonoBehaviour
             new System.Collections.Generic.List<EnemyWaveMember>();
 
 
+    private MapSceneReferences currentMapReferences;
+
+
     // ==================================================
     // Floor Definitions
     // ==================================================
@@ -232,6 +235,10 @@ public partial class FloorManager : MonoBehaviour
 
         spawnPoints =
             mapReferences.enemySpawnPoints;
+
+
+        currentMapReferences =
+            mapReferences;
     }
 
 

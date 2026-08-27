@@ -174,9 +174,7 @@ public class EnemyChaserAttack : MonoBehaviour
     private void Start()
     {
         GameObject playerObject =
-            GameObject.FindGameObjectWithTag(
-                "Player"
-            );
+            EncounterTarget.ResolveGameObject();
 
 
         if (playerObject != null)

@@ -74,6 +74,11 @@ public class SplashBomb : MonoBehaviour
         6f;
 
 
+    [Min(0f)]
+    public float knockbackForce =
+        8f;
+
+
     // ==================================================
     // Ink
     // ==================================================
@@ -630,6 +635,13 @@ public class SplashBomb : MonoBehaviour
 
 
         // ==========================================
+        // Push-only targets (Defense Target)
+        // ==========================================
+
+        KnockbackTargets();
+
+
+        // ==========================================
         // Boss Damage
         // ==========================================
 
@@ -763,6 +775,60 @@ public class SplashBomb : MonoBehaviour
 
             enemy.TakeDamage(
                 finalDamage
+            );
+        }
+    }
+
+
+    // ==================================================
+    // Knockback
+    //
+    // Radial push inside the same explosion radius. No damage: the
+    // Player must never be able to destroy their own Defense Target.
+    // ==================================================
+
+    private void KnockbackTargets()
+    {
+        Collider2D[] hits =
+            Physics2D.OverlapCircleAll(
+                transform.position,
+                outerDamageRadius
+            );
+
+
+        HashSet<IKnockbackReceiver> pushed =
+            new HashSet<IKnockbackReceiver>();
+
+
+        foreach (Collider2D hit in hits)
+        {
+            if (hit == null)
+            {
+                continue;
+            }
+
+
+            IKnockbackReceiver receiver =
+                hit.GetComponentInParent<
+                    IKnockbackReceiver
+                >();
+
+
+            if (receiver == null)
+            {
+                continue;
+            }
+
+
+            if (!pushed.Add(receiver))
+            {
+                continue;
+            }
+
+
+            receiver.ApplyKnockback(
+                transform.position,
+                knockbackForce
             );
         }
     }

@@ -96,9 +96,7 @@ public class EnemyMovement : MonoBehaviour
     private void Start()
     {
         GameObject playerObject =
-            GameObject.FindGameObjectWithTag(
-                "Player"
-            );
+            EncounterTarget.ResolveGameObject();
 
 
         if (playerObject != null)

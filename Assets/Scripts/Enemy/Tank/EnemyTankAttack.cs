@@ -44,6 +44,13 @@ public class EnemyTankAttack : MonoBehaviour
         3;
 
 
+    [Header("Knockback")]
+
+    [Min(0f)]
+    public float knockbackForce =
+        7f;
+
+
     // ==================================================
     // Windup
     // ==================================================
@@ -184,6 +191,20 @@ public class EnemyTankAttack : MonoBehaviour
 
     private Transform player;
 
+    private Collider2D targetCollider;
+
+
+    // The real Player, kept separately from the primary target. On a
+    // Defense Floor the primary target is the DefenseTarget, so without
+    // this the Tank would ignore a Player standing in its way.
+    private Transform playerBody;
+
+    private Collider2D playerBodyCollider;
+
+
+    // Which of the two this swing is aimed at. Null outside an attack.
+    private Transform attackFocus;
+
 
     private float stateTimer =
         0f;
@@ -253,15 +274,34 @@ public class EnemyTankAttack : MonoBehaviour
     private void Start()
     {
         GameObject playerObject =
-            GameObject.FindGameObjectWithTag(
-                "Player"
-            );
+            EncounterTarget.ResolveGameObject();
 
 
         if (playerObject != null)
         {
             player =
                 playerObject.transform;
+
+
+            targetCollider =
+                ResolveBodyCollider(playerObject);
+        }
+
+
+        GameObject actualPlayer =
+            GameObject.FindGameObjectWithTag(
+                "Player"
+            );
+
+
+        if (actualPlayer != null)
+        {
+            playerBody =
+                actualPlayer.transform;
+
+
+            playerBodyCollider =
+                ResolveBodyCollider(actualPlayer);
         }
 
 
@@ -335,43 +375,121 @@ public class EnemyTankAttack : MonoBehaviour
 
     private void UpdateChase()
     {
-        float distance =
-            Vector2.Distance(
-                transform.position,
-                player.position
-            );
+        Transform focus =
+            SelectAttackFocus();
 
 
-        // ==========================================
-        // 이전:
-        // Slash 범위에 들어오자마자 공격
-        //
-        // 변경:
-        // Slash 범위의 약 2/3까지
-        // 접근해야 공격 시작
-        // ==========================================
+        if (focus == null)
+        {
+            return;
+        }
 
+
+        BeginWindup(focus);
+    }
+
+
+    // A Player inside reach is answered first: body-blocking the Tank has
+    // to hurt, otherwise it is a free way to stall the Assault. The chase
+    // target itself is never changed here.
+    private Transform SelectAttackFocus()
+    {
         float triggerRange =
             slashRange
             * attackTriggerRangeRatio;
 
 
-        if (distance >
-            triggerRange)
+        if (playerBody != null &&
+            playerBody != player &&
+            GetDistanceToBody(
+                playerBody,
+                playerBodyCollider
+            ) <= triggerRange &&
+            HasLineOfSightTo(playerBody))
         {
-            return;
+            return playerBody;
         }
 
 
-        // 공격 시작 전까지만
-        // 시야 검사
-        if (!HasLineOfSight())
+        if (player != null &&
+            GetDistanceToTargetBody() <=
+                triggerRange &&
+            HasLineOfSightTo(player))
         {
-            return;
+            return player;
         }
 
 
-        BeginWindup();
+        return null;
+    }
+
+
+    // ==================================================
+    // Target Distance
+    //
+    // Measured to the target's body, not its pivot. A target whose
+    // collider is wider than the Player physically blocks the Tank from
+    // ever reaching the pivot-based trigger range, so the sweep never
+    // started against it.
+    // ==================================================
+
+    private float GetDistanceToTargetBody()
+    {
+        return GetDistanceToBody(
+            player,
+            targetCollider
+        );
+    }
+
+
+    private float GetDistanceToBody(
+        Transform body,
+        Collider2D bodyCollider)
+    {
+        Vector2 origin =
+            transform.position;
+
+
+        if (bodyCollider != null)
+        {
+            return Vector2.Distance(
+                origin,
+                bodyCollider.ClosestPoint(
+                    origin
+                )
+            );
+        }
+
+
+        if (body != null)
+        {
+            return Vector2.Distance(
+                origin,
+                body.position
+            );
+        }
+
+
+        return float.MaxValue;
+    }
+
+
+    private static Collider2D ResolveBodyCollider(
+        GameObject bodyObject)
+    {
+        Collider2D bodyCollider =
+            bodyObject.GetComponent<Collider2D>();
+
+
+        if (bodyCollider == null)
+        {
+            bodyCollider =
+                bodyObject
+                    .GetComponentInChildren<Collider2D>();
+        }
+
+
+        return bodyCollider;
     }
 
 
@@ -379,8 +497,13 @@ public class EnemyTankAttack : MonoBehaviour
     // Begin Windup
     // ==================================================
 
-    private void BeginWindup()
+    private void BeginWindup(
+        Transform focus)
     {
+        attackFocus =
+            focus;
+
+
         state =
             TankState.Windup;
 
@@ -697,10 +820,33 @@ public class EnemyTankAttack : MonoBehaviour
     // Slash Damage
     // ==================================================
 
+    // The sweep hits everything in the arc, not just what triggered it:
+    // a Player blocking in front of the DefenseTarget eats the same swing.
     private void ApplySlashDamage()
     {
-        if (player == null)
-            return;
+        TryApplySlashTo(
+            player,
+            targetCollider
+        );
+
+
+        if (playerBody != null &&
+            playerBody != player)
+        {
+            TryApplySlashTo(
+                playerBody,
+                playerBodyCollider
+            );
+        }
+    }
+
+
+    private bool TryApplySlashTo(
+        Transform body,
+        Collider2D bodyCollider)
+    {
+        if (body == null)
+            return false;
 
 
         Vector2 origin =
@@ -708,7 +854,7 @@ public class EnemyTankAttack : MonoBehaviour
 
 
         Vector2 toPlayer =
-            (Vector2)player.position
+            (Vector2)body.position
             - origin;
 
 
@@ -718,12 +864,17 @@ public class EnemyTankAttack : MonoBehaviour
 
         // ==========================================
         // Range
+        //
+        // Same geometry as the attack trigger: measured to the target's
+        // collider body, falling back to the pivot when it has none.
         // ==========================================
 
-        if (distance >
-            slashRange)
+        if (GetDistanceToBody(
+                body,
+                bodyCollider
+            ) > slashRange)
         {
-            return;
+            return false;
         }
 
 
@@ -744,7 +895,7 @@ public class EnemyTankAttack : MonoBehaviour
             if (angle >
                 slashHalfAngle)
             {
-                return;
+                return false;
             }
 
 
@@ -763,23 +914,33 @@ public class EnemyTankAttack : MonoBehaviour
 
             if (wallHit.collider != null)
             {
-                return;
+                return false;
             }
         }
 
 
-        PlayerShield playerShield =
-            player.GetComponent<PlayerShield>();
+        IEncounterDamageTarget damageTarget =
+            body.GetComponent<IEncounterDamageTarget>();
 
 
-        if (playerShield == null)
-            return;
+        if (damageTarget == null)
+            return false;
 
 
-        playerShield.TakeDamage(
+        damageTarget.TakeDamage(
             damage,
             transform.position
         );
+
+
+        KnockbackUtility.TryApply(
+            body,
+            transform.position,
+            knockbackForce
+        );
+
+
+        return true;
     }
 
 
@@ -1002,6 +1163,10 @@ public class EnemyTankAttack : MonoBehaviour
             false;
 
 
+        attackFocus =
+            null;
+
+
         if (movement != null)
         {
             movement
@@ -1049,8 +1214,20 @@ public class EnemyTankAttack : MonoBehaviour
 
     private Vector2 GetDirectionToPlayer()
     {
+        Transform aimTarget =
+            attackFocus != null
+                ? attackFocus
+                : player;
+
+
+        if (aimTarget == null)
+        {
+            return Vector2.right;
+        }
+
+
         Vector2 difference =
-            (Vector2)player.position
+            (Vector2)aimTarget.position
             - (Vector2)transform.position;
 
 
@@ -1069,14 +1246,15 @@ public class EnemyTankAttack : MonoBehaviour
     // Initial LOS
     // ==================================================
 
-    private bool HasLineOfSight()
+    private bool HasLineOfSightTo(
+        Transform body)
     {
-        if (player == null)
+        if (body == null)
             return false;
 
 
         Vector2 difference =
-            (Vector2)player.position
+            (Vector2)body.position
             - (Vector2)transform.position;
 
 

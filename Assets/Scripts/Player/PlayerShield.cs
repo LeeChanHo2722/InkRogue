@@ -3,8 +3,11 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class PlayerShield : MonoBehaviour
+public class PlayerShield : MonoBehaviour, IEncounterDamageTarget
 {
+    public Transform TargetTransform => transform;
+
+
     [Header("Shield")]
     public float maxShield = 5f;
 
