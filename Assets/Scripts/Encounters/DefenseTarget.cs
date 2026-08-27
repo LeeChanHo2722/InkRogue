@@ -37,6 +37,10 @@ public class DefenseTarget : MonoBehaviour,
 
     public event Action Destroyed;
 
+    // Fired on every health change, including the reset a Floor retry does,
+    // so a bound HP bar never shows a stale value.
+    public event Action<float, float> HealthChanged;
+
     public float MaxHealth => maxHealth;
 
     public float CurrentHealth => currentHealth;
@@ -84,6 +88,10 @@ public class DefenseTarget : MonoBehaviour,
         }
 
         transform.position = initialPosition;
+
+        HealthChanged?.Invoke(
+            currentHealth,
+            maxHealth);
     }
 
     public void TakeDamage(
@@ -103,6 +111,10 @@ public class DefenseTarget : MonoBehaviour,
         currentHealth = Mathf.Max(
             0f,
             currentHealth - damage);
+
+        HealthChanged?.Invoke(
+            currentHealth,
+            maxHealth);
 
         if (currentHealth > 0f)
         {

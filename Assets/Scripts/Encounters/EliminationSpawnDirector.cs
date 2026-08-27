@@ -14,6 +14,15 @@ public sealed class EliminationSpawnDirector : IEncounterSpawnSource
 
     public int AliveCount => aliveCount;
 
+    // Spawn bag entries that have not entered the field yet. Together with
+    // AliveCount this is what the Wave still needs cleared.
+    public int PendingCount =>
+        currentWave != null
+            ? Math.Max(
+                0,
+                currentWave.spawnBag.Length - spawnCursor)
+            : 0;
+
     public int MaxAlive =>
         currentWave != null
             ? currentWave.maxAlive
