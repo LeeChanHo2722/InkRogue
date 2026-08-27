@@ -56,6 +56,15 @@ public partial class FloorManager
     [SerializeField]
     private float defenseRetryInvulnerability = 1.5f;
 
+    [Tooltip("Spawned at Defense Floor start. Maps carry no Target.")]
+    [SerializeField]
+    private DefenseTarget defenseTargetPrefab;
+
+    [Tooltip("Only used when the Map has a single Player Spawn Point.")]
+    [SerializeField]
+    private Vector2 defenseTargetFallbackOffset =
+        new Vector2(1.5f, 0f);
+
 
     private readonly EliminationSpawnDirector
         encounterSpawnDirector =
@@ -131,6 +140,10 @@ public partial class FloorManager
     private int defenseAssaultIndex;
 
     private DefenseTarget defenseTarget;
+
+    private readonly System.Collections.Generic.List<Transform>
+        defenseSpawnCandidates =
+            new System.Collections.Generic.List<Transform>();
 
     private bool defenseRestPhase;
 
@@ -272,7 +285,6 @@ public partial class FloorManager
 
         if (encounterMode != FloorEncounterMode.Defense)
         {
-            SetMapDefenseTargetActive(false);
             EncounterTarget.UsePlayerTarget();
         }
 
@@ -421,11 +433,23 @@ public partial class FloorManager
             return false;
         }
 
-        if (currentMapReferences == null
-            || currentMapReferences.defenseTarget == null)
+        if (defenseTargetPrefab == null)
         {
-            error = "Defense Encounter requires a DefenseTarget on the "
-                + "current Map's MapSceneReferences.";
+            error = "Defense Encounter requires a DefenseTarget Prefab "
+                + "on FloorManager.";
+            return false;
+        }
+
+        if (currentMapReferences == null)
+        {
+            error = "Defense Encounter requires bound MapSceneReferences.";
+            return false;
+        }
+
+        if (!TrySpawnDefenseTarget(out DefenseTarget spawnedTarget))
+        {
+            error = "Defense Encounter could not place the DefenseTarget: "
+                + "no usable Player Spawn Point on the current Map.";
             return false;
         }
 
@@ -449,10 +473,7 @@ public partial class FloorManager
             return false;
         }
 
-        SetMapDefenseTargetActive(true);
-
-        BindDefenseTarget(
-            currentMapReferences.defenseTarget);
+        BindDefenseTarget(spawnedTarget);
 
         defenseTarget.ResetForFloor();
         EncounterTarget.SetDefenseTarget(defenseTarget);
@@ -495,22 +516,109 @@ public partial class FloorManager
     }
 
 
-    private void SetMapDefenseTargetActive(
-        bool active)
+    // Places the Target on the Player Spawn Point nearest to the one this
+    // Floor already chose, so a normal combat Map needs no Defense-specific
+    // data. Deterministic: no Random, and the Encounter seed is untouched.
+    private bool TrySpawnDefenseTarget(
+        out DefenseTarget spawned)
     {
-        if (currentMapReferences == null
-            || currentMapReferences.defenseTarget == null)
+        spawned = null;
+
+        DestroyRuntimeDefenseTarget();
+
+        Transform playerSpawn =
+            transitionManager != null
+                ? transitionManager.CurrentPlayerSpawnPoint
+                : null;
+
+        if (playerSpawn == null)
+        {
+            return false;
+        }
+
+        currentMapReferences.CollectPlayerSpawnPoints(
+            defenseSpawnCandidates);
+
+        Transform best = null;
+        float bestDistance = float.MaxValue;
+
+        for (int i = 0; i < defenseSpawnCandidates.Count; i++)
+        {
+            Transform candidate = defenseSpawnCandidates[i];
+
+            if (candidate == null
+                || candidate == playerSpawn)
+            {
+                continue;
+            }
+
+            float distance =
+                ((Vector2)candidate.position
+                    - (Vector2)playerSpawn.position)
+                        .sqrMagnitude;
+
+            // Strict less-than keeps the earlier array entry on a tie.
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                best = candidate;
+            }
+        }
+
+        Vector2 spawnPosition =
+            best != null
+                ? (Vector2)best.position
+                : (Vector2)playerSpawn.position
+                    + defenseTargetFallbackOffset;
+
+        // Position is applied before Awake, so the Target caches this as the
+        // origin its retry reset returns to.
+        spawned = Instantiate(
+            defenseTargetPrefab,
+            spawnPosition,
+            Quaternion.identity);
+
+        // Parenting into the Map keeps it on the Map Scene's lifetime, so a
+        // Map unload takes it with it.
+        spawned.transform.SetParent(
+            currentMapReferences.transform,
+            true);
+
+        Debug.Log(
+            "DEFENSE TARGET SPAWNED | Floor "
+            + CurrentFloor
+            + " | Position "
+            + spawnPosition
+            + (best != null
+                ? " | Nearest Player Spawn"
+                : " | Fallback offset"),
+            this);
+
+        return true;
+    }
+
+
+    private void DestroyRuntimeDefenseTarget()
+    {
+        if (defenseTarget == null)
         {
             return;
         }
 
         GameObject targetObject =
-            currentMapReferences.defenseTarget.gameObject;
+            defenseTarget.gameObject;
 
-        if (targetObject.activeSelf != active)
+        UnbindDefenseTarget();
+
+        // Destroy only takes effect at end of frame, so deactivate first:
+        // otherwise the old Collider/Rigidbody would briefly coexist with a
+        // replacement spawned in the same frame.
+        if (targetObject.activeSelf)
         {
-            targetObject.SetActive(active);
+            targetObject.SetActive(false);
         }
+
+        Destroy(targetObject);
     }
 
 
@@ -1676,7 +1784,7 @@ public partial class FloorManager
         defenseRestPhase = false;
         defensePhaseRemaining = 0f;
         defenseSpawnDirector.Reset();
-        UnbindDefenseTarget();
+        DestroyRuntimeDefenseTarget();
         EncounterTarget.UsePlayerTarget();
         activeEncounterEnemies.Clear();
     }

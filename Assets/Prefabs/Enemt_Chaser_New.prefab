@@ -189,6 +189,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyContactDamage
   damage: 1
   damageInterval: 1
+  knockbackForce: 4
+  meleeReach: 0.75
   requiresAttackWindow: 1
 --- !u!114 &6722971420045351800
 MonoBehaviour:
