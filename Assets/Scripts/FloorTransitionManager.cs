@@ -78,6 +78,11 @@ public class FloorTransitionManager : MonoBehaviour
     private Transform playerSpawnPoint;
 
 
+    // The Spawn Point this Floor actually picked. Read-only so callers reuse
+    // the deterministic selection instead of recomputing it.
+    public Transform CurrentPlayerSpawnPoint => playerSpawnPoint;
+
+
     private const int PlayerSpawnSeedSalt = 0x7E11A501;
 
 
