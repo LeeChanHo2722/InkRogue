@@ -2832,6 +2832,10 @@ MonoBehaviour:
   mapSceneName: Map_Prototype
   floorTransitionManager: {fileID: 25947623}
   bossArenaTransitionManager: {fileID: 1459709845}
+  developmentWeapons:
+  - {fileID: 11400000, guid: 9b182a3d52c679147b47c1468ed3ccc0, type: 2}
+  - {fileID: 11400000, guid: 48548c7e2afeed04a9204a7dd0830bb0, type: 2}
+  - {fileID: 11400000, guid: f2bdf56fb01692c4fa1ab6f9501bdc8b, type: 2}
 --- !u!4 &240151138
 Transform:
   m_ObjectHideFlags: 0
@@ -20979,6 +20983,7 @@ GameObject:
   - component: {fileID: 2033795558}
   - component: {fileID: 2033795559}
   - component: {fileID: 2033795560}
+  - component: {fileID: 2033795561}
   m_Layer: 0
   m_Name: AimPivot
   m_TagString: Untagged
@@ -21255,6 +21260,33 @@ MonoBehaviour:
   ringPulseSpeed: 7
   particleSortingOffset: 2
   ringSortingOffset: 1
+--- !u!114 &2033795561
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2033795551}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93aa1daf7e29a154b9fdb9f1cb5c6bf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MachineGunWeaponBehaviour
+  weaponDefinition: {fileID: 11400000, guid: 48548c7e2afeed04a9204a7dd0830bb0, type: 2}
+  bulletPrefab: {fileID: 1948409203245577245, guid: 5a1ae4ef36b0e454d9ae9764794b9e43,
+    type: 3}
+  bulletDamage: 1
+  initialFireRate: 4
+  maxFireRate: 12
+  accelerationTime: 1.5
+  spinDownTime: 0.5
+  initialSpreadAngle: 4
+  maxSpreadAngle: 15
+  rangeMultiplier: 1.25
+  inkUsePerShotPercent: 0.0125
+  inkResource: {fileID: 1275632736}
+  playerDive: {fileID: 1275632737}
+  shotInkStart: {fileID: 1275632743}
 --- !u!1 &2035389072
 GameObject:
   m_ObjectHideFlags: 0

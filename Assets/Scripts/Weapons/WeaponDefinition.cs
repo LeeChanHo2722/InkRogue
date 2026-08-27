@@ -8,7 +8,10 @@ public enum WeaponType
     Shotgun,
     Cannon,
     Shield,
-    Other
+    Other,
+
+    // Appended so existing serialized WeaponType values keep their index.
+    MachineGun
 }
 
 

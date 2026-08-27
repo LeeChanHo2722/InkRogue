@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -14,6 +15,15 @@ public class MapSceneLoader : MonoBehaviour
 
     [SerializeField]
     private BossArenaTransitionManager bossArenaTransitionManager;
+
+
+    [Header("Development Loadout")]
+
+    [Tooltip("Every implemented weapon, available from the first Floor. "
+        + "Temporary development policy - unlock rules replace this once "
+        + "the full roster and Boss are done.")]
+    [SerializeField]
+    private WeaponDefinition[] developmentWeapons;
 
     private bool loadStarted =
         false;
@@ -196,43 +206,41 @@ public class MapSceneLoader : MonoBehaviour
         if (leftWeapon == null)
             return LogMigrationRunError("Left WeaponDefinition is missing.");
 
+        // The equipped pair still leads the roster, so the two-weapon
+        // setup behaves exactly as before. Anything listed in
+        // developmentWeapons is simply added behind it.
+        List<WeaponDefinition> roster =
+            new List<WeaponDefinition>
+            {
+                rightWeapon,
+                leftWeapon
+            };
+
+        AppendDevelopmentWeapons(roster);
+
         runManager.InitializeRun(
             RunMode.TwentyFloor,
-            new[] { rightWeapon, leftWeapon }
+            roster
         );
 
         bool rightAssigned =
-            runManager.TrySetFloorLoadoutWeapon(
+            FillFloorLoadout(
+                runManager,
                 WeaponSlotSide.Right,
-                0,
-                rightWeapon
+                rightWeapon,
+                roster
             );
 
         bool leftAssigned =
-            runManager.TrySetFloorLoadoutWeapon(
+            FillFloorLoadout(
+                runManager,
                 WeaponSlotSide.Left,
-                0,
-                leftWeapon
-            );
-
-        bool alternateWeaponsAssigned =
-            rightWeapon == leftWeapon ||
-            (
-                runManager.TrySetFloorLoadoutWeapon(
-                    WeaponSlotSide.Right,
-                    1,
-                    leftWeapon
-                ) &&
-                runManager.TrySetFloorLoadoutWeapon(
-                    WeaponSlotSide.Left,
-                    1,
-                    rightWeapon
-                )
+                leftWeapon,
+                roster
             );
 
         if (rightAssigned &&
-            leftAssigned &&
-            alternateWeaponsAssigned)
+            leftAssigned)
             return true;
 
         runManager.InitializeRun(
@@ -243,6 +251,71 @@ public class MapSceneLoader : MonoBehaviour
         return LogMigrationRunError(
             "Floor Loadout initialization failed."
         );
+    }
+
+
+    private void AppendDevelopmentWeapons(
+        List<WeaponDefinition> roster)
+    {
+        if (developmentWeapons == null)
+        {
+            return;
+        }
+
+        foreach (WeaponDefinition weapon in developmentWeapons)
+        {
+            if (weapon == null ||
+                roster.Contains(weapon))
+            {
+                continue;
+            }
+
+            roster.Add(weapon);
+        }
+    }
+
+
+    // Slot 0 is the hand's own weapon and must succeed; the remaining
+    // slots are filled from the rest of the roster, best effort.
+    private bool FillFloorLoadout(
+        RunManager runManager,
+        WeaponSlotSide side,
+        WeaponDefinition ownWeapon,
+        List<WeaponDefinition> roster)
+    {
+        if (!runManager.TrySetFloorLoadoutWeapon(
+                side,
+                0,
+                ownWeapon))
+        {
+            return false;
+        }
+
+        int slot = 1;
+
+        foreach (WeaponDefinition weapon in roster)
+        {
+            if (slot >= RunManager.FloorLoadoutSlotsPerHand)
+            {
+                break;
+            }
+
+            if (weapon == null ||
+                weapon == ownWeapon)
+            {
+                continue;
+            }
+
+            if (runManager.TrySetFloorLoadoutWeapon(
+                    side,
+                    slot,
+                    weapon))
+            {
+                slot++;
+            }
+        }
+
+        return true;
     }
 
 
