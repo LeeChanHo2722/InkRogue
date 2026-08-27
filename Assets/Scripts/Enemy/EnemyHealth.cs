@@ -151,7 +151,16 @@ public class EnemyHealth : MonoBehaviour
     // Death
     // ==================================================
 
-    private void Die()
+    // Encounter cleanup death: same presentation, but the kill is not
+    // credited to the Player.
+    public void KillForEncounterCleanup()
+    {
+        Die(false);
+    }
+
+
+    private void Die(
+        bool grantPlayerCredit = true)
     {
         if (isDead)
         {
@@ -186,7 +195,8 @@ public class EnemyHealth : MonoBehaviour
 
         if (waveMember != null)
         {
-            waveMember.ReportDeath();
+            waveMember.ReportDeath(
+                grantPlayerCredit);
         }
 
 

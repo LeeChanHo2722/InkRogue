@@ -23,6 +23,13 @@ public enum FloorDifficulty
     Hard
 }
 
+public enum FloorEncounterMode
+{
+    Elimination,
+    Rush,
+    Defense
+}
+
 public enum EncounterProfile
 {
     Rush,

@@ -1,6 +1,6 @@
 using System;
 
-public sealed class EliminationSpawnDirector
+public sealed class EliminationSpawnDirector : IEncounterSpawnSource
 {
     private EncounterWavePlan currentWave;
     private int spawnCursor;

@@ -38,7 +38,8 @@ public class EnemyWaveMember : MonoBehaviour
     // Report Death
     // ==================================================
 
-    public void ReportDeath()
+    public void ReportDeath(
+        bool grantPlayerCredit = true)
     {
         if (deathReported)
             return;
@@ -51,7 +52,8 @@ public class EnemyWaveMember : MonoBehaviour
         if (floorManager != null)
         {
             floorManager.EnemyDefeated(
-                waveIndex
+                waveIndex,
+                grantPlayerCredit
             );
         }
     }
