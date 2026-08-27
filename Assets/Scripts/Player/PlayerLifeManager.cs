@@ -191,40 +191,43 @@ public class PlayerLifeManager : MonoBehaviour
         // Life HUD 사망 연출
         // ==========================================
 
-        int lostLifeIndex =
-            currentLives - 1;
-
-        // 먼저 사망 연출
-        if (lostLifeIndex >= 0 &&
-            lostLifeIndex < lifeImages.Length &&
-            lifeImages[lostLifeIndex] != null)
+        // Defense spends a life on the DefenseTarget, not on the Player.
+        // Dying there still costs the full death presentation and time.
+        if (!IsDefenseFloorPlayerDeath())
         {
-            yield return StartCoroutine(
-                PlayLifeDeathAnimation(
-                    lifeImages[lostLifeIndex]
-                )
-            );
-        }
+            int lostLifeIndex =
+                currentLives - 1;
 
-        // 연출이 끝난 후 실제 목숨 감소
-        currentLives =
-            Mathf.Max(
-                0,
-                currentLives - 1
-            );
-
-        UpdateLifeHUD();
-
-        // 마지막 목숨까지 소진
-        if (currentLives <= 0)
-        {
-            if (playerShield != null)
+            if (lostLifeIndex >= 0 &&
+                lostLifeIndex < lifeImages.Length &&
+                lifeImages[lostLifeIndex] != null)
             {
-                playerShield.TriggerGameOver();
+                yield return StartCoroutine(
+                    PlayLifeDeathAnimation(
+                        lifeImages[lostLifeIndex]
+                    )
+                );
             }
 
-            yield break;
+            currentLives =
+                Mathf.Max(
+                    0,
+                    currentLives - 1
+                );
+
+            UpdateLifeHUD();
+
+            if (currentLives <= 0)
+            {
+                if (playerShield != null)
+                {
+                    playerShield.TriggerGameOver();
+                }
+
+                yield break;
+            }
         }
+
 
         // 목숨이 남아 있으면 현재 Wave 유지 후 부활
         if (floorTransitionManager != null)
@@ -501,6 +504,48 @@ public class PlayerLifeManager : MonoBehaviour
         }
 
         Destroy(vfxObject);
+    }
+
+    // True only while a Defense Floor is running. The DefenseTarget owns
+    // the life cost there, so a plain Player death must not spend one.
+    private bool IsDefenseFloorPlayerDeath()
+    {
+        FloorManager floorManager =
+            floorTransitionManager != null
+                ? floorTransitionManager.floorManager
+                : null;
+
+        return floorManager != null
+            && floorManager.IsDefenseEncounterActive;
+    }
+
+    // Floor failure that is not a Player death (Defense Target lost).
+    // Returns true when a life remains and the Floor can be retried.
+    public bool TryConsumeLife()
+    {
+        if (currentLives <= 0)
+        {
+            return false;
+        }
+
+        currentLives = Mathf.Max(
+            0,
+            currentLives - 1
+        );
+
+        UpdateLifeHUD();
+
+        if (currentLives <= 0)
+        {
+            if (playerShield != null)
+            {
+                playerShield.TriggerGameOver();
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     public void ResetForNewFloor()

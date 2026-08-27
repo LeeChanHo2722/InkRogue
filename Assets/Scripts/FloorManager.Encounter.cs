@@ -38,6 +38,25 @@ public partial class FloorManager
     private int rushMaxAlive = 20;
 
 
+    [Header("Defense Encounter")]
+
+    [Min(1f)]
+    [SerializeField]
+    private float defenseAssaultDuration = 10f;
+
+    [Min(0f)]
+    [SerializeField]
+    private float defenseRestDuration = 3f;
+
+    [Min(0f)]
+    [SerializeField]
+    private float defenseRetryDelay = 0.4f;
+
+    [Min(0f)]
+    [SerializeField]
+    private float defenseRetryInvulnerability = 1.5f;
+
+
     private readonly EliminationSpawnDirector
         encounterSpawnDirector =
             new EliminationSpawnDirector();
@@ -86,10 +105,47 @@ public partial class FloorManager
         rushNextAssaultRemaining;
 
 
+    // Defense reuses the Rush consumption rules (queue, MaxAlive, backlog,
+    // no kill-refill); only the arrival timing differs, and that lives in
+    // DefenseFlowRoutine rather than in the director.
+    private readonly RushSpawnDirector defenseSpawnDirector =
+        new RushSpawnDirector();
+
+    private Coroutine defenseFlowCoroutine;
+
+    private Coroutine defenseReleaseCoroutine;
+
+    private bool defenseRuntimeActive;
+
+    private bool defenseSpawningEnabled;
+
+    private bool defenseSucceeded;
+
+    private bool defenseFailed;
+
+    private bool defenseRetryPending;
+
+    private int defenseAssaultIndex;
+
+    private DefenseTarget defenseTarget;
+
+
+    public bool IsDefenseEncounterActive => defenseRuntimeActive;
+
+    public int DefenseAssaultIndex => defenseAssaultIndex;
+
+
     public bool IsFloorCombatComplete
     {
         get
         {
+            if (defenseRuntimeActive)
+            {
+                return defenseSucceeded
+                    && !defenseFailed
+                    && defenseSpawnDirector.AliveCount <= 0;
+            }
+
             if (rushRuntimeActive)
             {
                 return !rushSpawningEnabled
@@ -134,6 +190,22 @@ public partial class FloorManager
         rushMaxAlive = Mathf.Max(
             1,
             rushMaxAlive);
+
+        defenseAssaultDuration = Mathf.Max(
+            1f,
+            defenseAssaultDuration);
+
+        defenseRestDuration = Mathf.Max(
+            0f,
+            defenseRestDuration);
+
+        defenseRetryDelay = Mathf.Max(
+            0f,
+            defenseRetryDelay);
+
+        defenseRetryInvulnerability = Mathf.Max(
+            0f,
+            defenseRetryInvulnerability);
     }
 
 
@@ -158,13 +230,10 @@ public partial class FloorManager
         FloorEncounterMode encounterMode =
             floorDefinition.EncounterMode;
 
-        if (encounterMode == FloorEncounterMode.Defense)
+        if (encounterMode != FloorEncounterMode.Defense)
         {
-            error = "Defense Encounter mode is not implemented yet. "
-                + "Floor "
-                + CurrentFloor
-                + " cannot start.";
-            return false;
+            SetMapDefenseTargetActive(false);
+            EncounterTarget.UsePlayerTarget();
         }
 
         bool isFirstFloor = CurrentFloor == 1;
@@ -262,6 +331,17 @@ public partial class FloorManager
             + plan.totalQuota,
             this);
 
+        if (encounterMode == FloorEncounterMode.Defense)
+        {
+            if (!TryStartDefenseEncounter(out error))
+            {
+                ResetEncounterRuntime();
+                return false;
+            }
+
+            return true;
+        }
+
         if (encounterMode == FloorEncounterMode.Rush)
         {
             if (!TryStartRushEncounter(out error))
@@ -281,6 +361,389 @@ public partial class FloorManager
 
         error = string.Empty;
         return true;
+    }
+
+
+    // ==================================================
+    // Defense Encounter
+    // ==================================================
+
+    private bool TryStartDefenseEncounter(
+        out string error)
+    {
+        if (currentEncounterPlan == null
+            || currentEncounterPlan.waves == null
+            || currentEncounterPlan.waves.Length == 0)
+        {
+            error = "Defense Encounter requires a generated "
+                + "Encounter Plan.";
+            return false;
+        }
+
+        if (currentMapReferences == null
+            || currentMapReferences.defenseTarget == null)
+        {
+            error = "Defense Encounter requires a DefenseTarget on the "
+                + "current Map's MapSceneReferences.";
+            return false;
+        }
+
+        // One MaxAlive for the whole Floor: the director must never be
+        // restarted per Assault, because that would reset AliveCount while
+        // earlier Assault enemies are still on the field.
+        int defenseMaxAlive = 1;
+
+        foreach (EncounterWavePlan wave in currentEncounterPlan.waves)
+        {
+            if (wave != null && wave.maxAlive > defenseMaxAlive)
+            {
+                defenseMaxAlive = wave.maxAlive;
+            }
+        }
+
+        if (!defenseSpawnDirector.TryBegin(
+                defenseMaxAlive,
+                out error))
+        {
+            return false;
+        }
+
+        SetMapDefenseTargetActive(true);
+
+        BindDefenseTarget(
+            currentMapReferences.defenseTarget);
+
+        defenseTarget.ResetForFloor();
+        EncounterTarget.SetDefenseTarget(defenseTarget);
+
+        defenseRuntimeActive = true;
+        defenseSpawningEnabled = false;
+        defenseSucceeded = false;
+        defenseFailed = false;
+        defenseRetryPending = false;
+        defenseAssaultIndex = 0;
+        currentWaveIndex = 0;
+        currentWaveTimer = 0f;
+        waveRunning = true;
+
+        HideWaveUI();
+
+        Debug.Log(
+            "DEFENSE START | Floor "
+            + CurrentFloor
+            + " | Assaults "
+            + currentEncounterPlan.waves.Length
+            + " | MaxAlive "
+            + defenseMaxAlive
+            + " | AssaultDuration "
+            + defenseAssaultDuration
+            + " | RestDuration "
+            + defenseRestDuration,
+            this);
+
+        defenseFlowCoroutine = StartCoroutine(
+            DefenseFlowRoutine());
+
+        defenseReleaseCoroutine = StartCoroutine(
+            DefenseReleaseRoutine());
+
+        error = string.Empty;
+        return true;
+    }
+
+
+    private void SetMapDefenseTargetActive(
+        bool active)
+    {
+        if (currentMapReferences == null
+            || currentMapReferences.defenseTarget == null)
+        {
+            return;
+        }
+
+        GameObject targetObject =
+            currentMapReferences.defenseTarget.gameObject;
+
+        if (targetObject.activeSelf != active)
+        {
+            targetObject.SetActive(active);
+        }
+    }
+
+
+    private void BindDefenseTarget(
+        DefenseTarget target)
+    {
+        UnbindDefenseTarget();
+
+        defenseTarget = target;
+        defenseTarget.Destroyed += HandleDefenseTargetDestroyed;
+    }
+
+
+    private void UnbindDefenseTarget()
+    {
+        if (defenseTarget == null)
+        {
+            return;
+        }
+
+        defenseTarget.Destroyed -= HandleDefenseTargetDestroyed;
+        defenseTarget = null;
+    }
+
+
+    // Assault N ends as soon as its enemies are gone, or when the Assault
+    // duration runs out. Rest never releases pending enemies, which is what
+    // makes it an actual breather.
+    private IEnumerator DefenseFlowRoutine()
+    {
+        EncounterWavePlan[] waves =
+            currentEncounterPlan.waves;
+
+        for (int index = 0; index < waves.Length; index++)
+        {
+            if (!IsDefenseFlowRunning())
+            {
+                defenseFlowCoroutine = null;
+                yield break;
+            }
+
+            defenseAssaultIndex = index;
+            currentWaveIndex = index;
+            defenseSpawningEnabled = true;
+
+            int enqueued = defenseSpawnDirector.EnqueueAssault(
+                waves[index].spawnBag);
+
+            Debug.Log(
+                "DEFENSE ASSAULT "
+                + (index + 1)
+                + " START | Profile "
+                + waves[index].profile.Profile
+                + " | Size "
+                + enqueued
+                + " | Alive "
+                + defenseSpawnDirector.AliveCount
+                + " | Pending "
+                + defenseSpawnDirector.PendingCount,
+                this);
+
+            float assaultElapsed = 0f;
+
+            while (assaultElapsed < defenseAssaultDuration)
+            {
+                if (!IsDefenseFlowRunning())
+                {
+                    defenseFlowCoroutine = null;
+                    yield break;
+                }
+
+                if (defenseSpawnDirector.AliveCount <= 0
+                    && defenseSpawnDirector.PendingCount <= 0)
+                {
+                    break;
+                }
+
+                yield return null;
+                assaultElapsed += Time.deltaTime;
+            }
+
+            defenseSpawningEnabled = false;
+
+            Debug.Log(
+                "DEFENSE ASSAULT "
+                + (index + 1)
+                + " END | Alive "
+                + defenseSpawnDirector.AliveCount
+                + " | Pending "
+                + defenseSpawnDirector.PendingCount,
+                this);
+
+            if (index >= waves.Length - 1)
+            {
+                break;
+            }
+
+            float restElapsed = 0f;
+
+            while (restElapsed < defenseRestDuration)
+            {
+                if (!IsDefenseFlowRunning())
+                {
+                    defenseFlowCoroutine = null;
+                    yield break;
+                }
+
+                yield return null;
+                restElapsed += Time.deltaTime;
+            }
+        }
+
+        defenseFlowCoroutine = null;
+
+        if (IsDefenseFlowRunning())
+        {
+            CompleteDefenseEncounter();
+        }
+    }
+
+
+    private bool IsDefenseFlowRunning()
+    {
+        return defenseRuntimeActive
+            && !defenseFailed
+            && !defenseSucceeded
+            && !floorCleared;
+    }
+
+
+    private IEnumerator DefenseReleaseRoutine()
+    {
+        while (defenseRuntimeActive
+            && !defenseFailed
+            && !floorCleared)
+        {
+            if (!defenseSpawningEnabled)
+            {
+                yield return null;
+                continue;
+            }
+
+            int spawned = SpawnEncounterEnemyRound(
+                defenseSpawnDirector,
+                defenseSpawnDirector.MaxAlive
+                    - defenseSpawnDirector.AliveCount);
+
+            if (spawned > 0
+                && defenseSpawnDirector.HasPendingSpawns
+                && defenseSpawnDirector.AliveCount
+                    < defenseSpawnDirector.MaxAlive)
+            {
+                yield return new WaitForSeconds(
+                    encounterReusedSpawnPointDelay);
+            }
+            else
+            {
+                yield return null;
+            }
+        }
+
+        defenseReleaseCoroutine = null;
+    }
+
+
+    private void CompleteDefenseEncounter()
+    {
+        if (defenseSucceeded || defenseFailed)
+        {
+            return;
+        }
+
+        // Same ordering rule as Rush Time Up: shut every spawn source down
+        // before the purge, so defeat callbacks cannot release a backlog.
+        defenseSucceeded = true;
+        defenseSpawningEnabled = false;
+        waveRunning = false;
+
+        int discarded = defenseSpawnDirector.PendingCount;
+
+        defenseSpawnDirector.ClearPending();
+        StopDefenseEncounter();
+
+        int purged = PurgeEncounterEnemies(true);
+
+        Debug.Log(
+            "DEFENSE SUCCESS | Discarded "
+            + discarded
+            + " pending | Purged "
+            + purged,
+            this);
+
+        CheckFloorClear();
+    }
+
+
+    private void HandleDefenseTargetDestroyed()
+    {
+        if (!defenseRuntimeActive
+            || defenseFailed
+            || defenseSucceeded)
+        {
+            return;
+        }
+
+        defenseFailed = true;
+        defenseSpawningEnabled = false;
+        waveRunning = false;
+
+        defenseSpawnDirector.ClearPending();
+        StopDefenseEncounter();
+
+        int removed = PurgeEncounterEnemies(false);
+
+        PlayerLifeManager lifeManager =
+            transitionManager != null
+                ? transitionManager.playerLifeManager
+                : null;
+
+        if (lifeManager == null)
+        {
+            Debug.LogError(
+                "Defense failure needs PlayerLifeManager to consume a "
+                + "life. Floor cannot be retried.",
+                this);
+            return;
+        }
+
+        bool canRetry = lifeManager.TryConsumeLife();
+
+        Debug.Log(
+            "DEFENSE FAILED | Floor "
+            + CurrentFloor
+            + " | Removed "
+            + removed
+            + " enemies | Retry "
+            + canRetry,
+            this);
+
+        if (!canRetry)
+        {
+            // TryConsumeLife already entered the existing Game Over path.
+            return;
+        }
+
+        defenseRetryPending = true;
+
+        transitionManager.StartCoroutine(
+            transitionManager.RespawnPlayerRoutine(
+                defenseRetryDelay,
+                defenseRetryInvulnerability));
+    }
+
+
+    private void StopDefenseRelease()
+    {
+        if (defenseReleaseCoroutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(defenseReleaseCoroutine);
+        defenseReleaseCoroutine = null;
+    }
+
+
+    private void StopDefenseEncounter()
+    {
+        if (defenseFlowCoroutine != null)
+        {
+            StopCoroutine(defenseFlowCoroutine);
+            defenseFlowCoroutine = null;
+        }
+
+        StopDefenseRelease();
+        defenseSpawningEnabled = false;
     }
 
 
@@ -527,7 +990,55 @@ public partial class FloorManager
     // Rush death is a Floor retry, not a Run reset: the same Floor starts
     // over from Assault 0 with the same Encounter seed, so SpawnCurrentFloor
     // regenerates an identical Plan.
-    public void RestartRushEncounterIfActive()
+    public void RestartEncounterFloorIfNeeded()
+    {
+        if (defenseRetryPending)
+        {
+            RestartDefenseFloor();
+            return;
+        }
+
+        RestartRushEncounterIfActive();
+    }
+
+
+    // Restarting the SAME Floor has to look like a first attempt, so the
+    // failed run's ink and in-flight projectiles are wiped. A plain
+    // respawn never calls this and keeps the world as it is.
+    private void PrepareEncounterRetryWorld()
+    {
+        if (transitionManager != null)
+        {
+            transitionManager.ClearFloorCombatObjects();
+        }
+
+        if (InkMap.Instance != null
+            && InkMap.Instance.IsReady)
+        {
+            InkMap.Instance.ClearAllInk();
+        }
+    }
+
+
+    private void RestartDefenseFloor()
+    {
+        defenseRetryPending = false;
+
+        StopDefenseEncounter();
+        defenseSpawnDirector.ClearPending();
+        PurgeEncounterEnemies(false);
+        PrepareEncounterRetryWorld();
+
+        Debug.Log(
+            "DEFENSE RETRY | Floor "
+            + CurrentFloor,
+            this);
+
+        SpawnCurrentFloor();
+    }
+
+
+    private void RestartRushEncounterIfActive()
     {
         if (!rushRuntimeActive)
         {
@@ -538,6 +1049,8 @@ public partial class FloorManager
         rushSpawnDirector.ClearPending();
 
         int removed = PurgeEncounterEnemies(false);
+
+        PrepareEncounterRetryWorld();
 
         Debug.Log(
             "RUSH RETRY | Floor "
@@ -885,6 +1398,14 @@ public partial class FloorManager
     private void HandleEncounterEnemyDefeated(
         int sourceWaveIndex)
     {
+        if (defenseRuntimeActive)
+        {
+            // Defense never refills on a kill either. Freed capacity is
+            // only used while an Assault phase is active.
+            defenseSpawnDirector.NotifyDefeated();
+            return;
+        }
+
         if (rushRuntimeActive)
         {
             // Rush never refills on a kill. Freed capacity only lets
@@ -1069,6 +1590,7 @@ public partial class FloorManager
 
     private void StopEncounterCoroutines()
     {
+        StopDefenseEncounter();
         StopRushEncounter();
         StopEncounterInitialBurst();
         StopEncounterRefill();
@@ -1087,6 +1609,13 @@ public partial class FloorManager
         rushNextAssaultRemaining = 0f;
         rushAssaultIndex = 0;
         rushSpawnDirector.Reset();
+        defenseRuntimeActive = false;
+        defenseSucceeded = false;
+        defenseFailed = false;
+        defenseAssaultIndex = 0;
+        defenseSpawnDirector.Reset();
+        UnbindDefenseTarget();
+        EncounterTarget.UsePlayerTarget();
         activeEncounterEnemies.Clear();
     }
 }

@@ -24,6 +24,16 @@ public class Bullet : MonoBehaviour
 
 
     // ==================================================
+    // Knockback
+    // ==================================================
+
+    [Header("Knockback")]
+
+    [Min(0f)]
+    public float knockbackForce = 2f;
+
+
+    // ==================================================
     // Runtime
     // ==================================================
 
@@ -153,6 +163,24 @@ public class Bullet : MonoBehaviour
             );
 
 
+            FinishBullet();
+
+
+            return;
+        }
+
+
+        // ==========================================
+        // Push-only target (Defense Target)
+        //
+        // Player fire never damages it, it only shoves it.
+        // ==========================================
+
+        if (KnockbackUtility.TryApply(
+                other,
+                transform.position,
+                knockbackForce))
+        {
             FinishBullet();
 
 

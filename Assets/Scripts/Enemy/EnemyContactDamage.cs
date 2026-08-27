@@ -12,6 +12,12 @@ public class EnemyContactDamage : MonoBehaviour
     public float damageInterval = 1f;
 
 
+    [Header("Knockback")]
+
+    [Min(0f)]
+    public float knockbackForce = 4f;
+
+
     // ==================================================
     // Attack Window
     // ==================================================
@@ -108,18 +114,25 @@ public class EnemyContactDamage : MonoBehaviour
         }
 
 
-        PlayerShield playerShield =
+        IEncounterDamageTarget damageTarget =
             collision.gameObject
-                .GetComponent<PlayerShield>();
+                .GetComponent<IEncounterDamageTarget>();
 
 
-        if (playerShield == null)
+        if (damageTarget == null)
             return;
 
 
-        playerShield.TakeDamage(
+        damageTarget.TakeDamage(
             damage,
             transform.position
+        );
+
+
+        KnockbackUtility.TryApply(
+            collision.collider,
+            transform.position,
+            knockbackForce
         );
 
 

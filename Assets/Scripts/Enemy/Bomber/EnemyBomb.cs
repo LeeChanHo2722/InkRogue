@@ -28,12 +28,23 @@ public class EnemyBomb : MonoBehaviour
 
     private float damageRadius;
 
+    [Header("Knockback")]
+
+    [Min(0f)]
+    public float knockbackForce =
+        10f;
+
     private float inkRadius;
 
     private int inkSplatCount;
 
 
-    private PlayerShield playerShield;
+    private IEncounterDamageTarget damageTarget;
+
+    // An explosion is an area attack, so the real Player is tracked
+    // separately from the thrown-at target. On a Defense Floor those are
+    // two different objects and both must be able to take the blast.
+    private IEncounterDamageTarget playerDamageTarget;
 
     private SpriteRenderer spriteRenderer;
 
@@ -97,15 +108,27 @@ public class EnemyBomb : MonoBehaviour
 
 
         GameObject player =
+            EncounterTarget.ResolveGameObject();
+
+
+        if (player != null)
+        {
+            damageTarget =
+                player.GetComponent<IEncounterDamageTarget>();
+        }
+
+
+        GameObject actualPlayer =
             GameObject.FindGameObjectWithTag(
                 "Player"
             );
 
 
-        if (player != null)
+        if (actualPlayer != null)
         {
-            playerShield =
-                player.GetComponent<PlayerShield>();
+            playerDamageTarget =
+                actualPlayer
+                    .GetComponent<IEncounterDamageTarget>();
         }
 
 
@@ -223,25 +246,20 @@ public class EnemyBomb : MonoBehaviour
         // 3. Player Damage
         // ==========================================
 
-        if (playerShield != null)
+        TryApplyExplosionTo(
+            damageTarget
+        );
+
+
+        if (playerDamageTarget != null &&
+            !ReferenceEquals(
+                playerDamageTarget,
+                damageTarget
+            ))
         {
-            float distance =
-                Vector2.Distance(
-                    targetPosition,
-                    playerShield
-                        .transform
-                        .position
-                );
-
-
-            if (distance <=
-                damageRadius)
-            {
-                playerShield.TakeDamage(
-                    damage,
-                    targetPosition
-                );
-            }
+            TryApplyExplosionTo(
+                playerDamageTarget
+            );
         }
 
 
@@ -251,6 +269,53 @@ public class EnemyBomb : MonoBehaviour
 
         Destroy(
             gameObject
+        );
+    }
+
+
+    private void TryApplyExplosionTo(
+        IEncounterDamageTarget target)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+
+        Transform body =
+            target.TargetTransform;
+
+
+        if (body == null)
+        {
+            return;
+        }
+
+
+        float distance =
+            Vector2.Distance(
+                targetPosition,
+                body.position
+            );
+
+
+        if (distance >
+            damageRadius)
+        {
+            return;
+        }
+
+
+        target.TakeDamage(
+            damage,
+            targetPosition
+        );
+
+
+        KnockbackUtility.TryApply(
+            body,
+            targetPosition,
+            knockbackForce
         );
     }
 

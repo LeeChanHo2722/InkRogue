@@ -1315,7 +1315,7 @@ public class FloorTransitionManager : MonoBehaviour
         if (floorManager != null)
         {
             floorManager
-                .RestartRushEncounterIfActive();
+                .RestartEncounterFloorIfNeeded();
         }
 
 
@@ -1410,7 +1410,7 @@ public class FloorTransitionManager : MonoBehaviour
     // Floor Combat Object Cleanup
     // ==================================================
 
-    private void ClearFloorCombatObjects()
+    public void ClearFloorCombatObjects()
     {
         FloorCleanupObject[] cleanupObjects =
             FindObjectsByType<

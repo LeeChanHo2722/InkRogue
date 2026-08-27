@@ -11,6 +11,11 @@ public class EnemyProjectile : MonoBehaviour
     public float impactInkRadius = 0.55f;
 
 
+    [Header("Knockback")]
+    [Min(0f)]
+    public float knockbackForce = 2f;
+
+
     private Rigidbody2D rb;
 
     private Vector2 previousPosition;
@@ -79,14 +84,20 @@ public class EnemyProjectile : MonoBehaviour
             return;
 
 
-        PlayerShield playerShield =
-            other.GetComponent<PlayerShield>();
+        IEncounterDamageTarget damageTarget =
+            other.GetComponent<IEncounterDamageTarget>();
 
-        if (playerShield != null)
+        if (damageTarget != null)
         {
-            playerShield.TakeDamage(
+            damageTarget.TakeDamage(
                 damage,
                 transform.position
+            );
+
+            KnockbackUtility.TryApply(
+                other,
+                transform.position,
+                knockbackForce
             );
 
             FinishProjectile();

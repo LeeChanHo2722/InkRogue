@@ -12,6 +12,11 @@ public class MapSceneReferences : MonoBehaviour
 
     public Transform[] enemySpawnPoints;
 
+    [Header("Defense")]
+
+    [Tooltip("Only required on Maps used by Defense Floors.")]
+    public DefenseTarget defenseTarget;
+
     [Header("Legacy")]
 
     [Tooltip("Used only when Player Spawn Points is empty. "
