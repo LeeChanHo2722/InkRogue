@@ -78,6 +78,17 @@ public class FloorTransitionManager : MonoBehaviour
     private Transform playerSpawnPoint;
 
 
+    private const int PlayerSpawnSeedSalt = 0x7E11A501;
+
+
+    private MapSceneReferences boundMapReferences;
+
+
+    private readonly System.Collections.Generic.List<Transform>
+        playerSpawnCandidates =
+            new System.Collections.Generic.List<Transform>();
+
+
     // ==================================================
     // Timing
     // ==================================================
@@ -353,10 +364,11 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        if (mapReferences.playerSpawnPoint == null)
+        if (mapReferences.CollectPlayerSpawnPoints(
+                playerSpawnCandidates) == 0)
         {
             Debug.LogError(
-                "MapSceneReferences requires a Player "
+                "MapSceneReferences requires at least one Player "
                 + "Spawn Point.",
                 this
             );
@@ -413,9 +425,11 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
-        if (!SetRespawnPoint(
-                mapReferences.playerSpawnPoint
-            ))
+        boundMapReferences =
+            mapReferences;
+
+
+        if (!ApplyFloorPlayerSpawnPoint())
         {
             return false;
         }
@@ -1109,6 +1123,9 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
+        ApplyFloorPlayerSpawnPoint();
+
+
         TeleportPlayerToSpawnPoint();
 
 
@@ -1120,6 +1137,114 @@ public class FloorTransitionManager : MonoBehaviour
 
 
         yield return null;
+    }
+
+
+    // Runs on every Floor entry, not only on Map load, so a Floor that
+    // reuses the current Map still picks a spawn point from its own
+    // Encounter seed. Deterministic, so repeated calls within one Floor
+    // resolve to the same Transform.
+    private bool ApplyFloorPlayerSpawnPoint()
+    {
+        if (boundMapReferences == null)
+            return false;
+
+
+        int candidateCount =
+            boundMapReferences.CollectPlayerSpawnPoints(
+                playerSpawnCandidates
+            );
+
+
+        if (candidateCount == 0)
+        {
+            Debug.LogError(
+                "MapSceneReferences has no valid Player "
+                + "Spawn Point.",
+                this
+            );
+
+
+            return false;
+        }
+
+
+        int selectedIndex = 0;
+
+
+        if (candidateCount > 1)
+        {
+            if (TryGetFloorEncounterSeed(out int encounterSeed))
+            {
+                selectedIndex =
+                    new System.Random(
+                        DerivePlayerSpawnSeed(encounterSeed)
+                    ).Next(candidateCount);
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "FloorTransitionManager has no Encounter seed for "
+                    + "Player Spawn selection. Using the first candidate.",
+                    this
+                );
+            }
+        }
+
+
+        return SetRespawnPoint(
+            playerSpawnCandidates[selectedIndex]
+        );
+    }
+
+
+    private bool TryGetFloorEncounterSeed(
+        out int encounterSeed)
+    {
+        RunManager runManager =
+            floorManager != null
+                ? floorManager.runManager
+                : null;
+
+
+        if (runManager != null)
+        {
+            FloorCandidate candidate =
+                runManager.SelectedCandidate;
+
+
+            if (candidate != null)
+            {
+                encounterSeed =
+                    candidate.EncounterSeed;
+
+
+                return true;
+            }
+
+
+            if (runManager.HasFirstFloorEncounterSeed)
+            {
+                encounterSeed =
+                    runManager.FirstFloorEncounterSeed;
+
+
+                return true;
+            }
+        }
+
+
+        encounterSeed = 0;
+        return false;
+    }
+
+
+    private static int DerivePlayerSpawnSeed(
+        int encounterSeed)
+    {
+        return unchecked(
+            encounterSeed * 397 ^ PlayerSpawnSeedSalt
+        );
     }
 
 
