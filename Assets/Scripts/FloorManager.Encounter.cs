@@ -23,6 +23,21 @@ public partial class FloorManager
     private float encounterReusedSpawnPointDelay = 0.2f;
 
 
+    [Header("Rush Encounter")]
+
+    [Min(1f)]
+    [SerializeField]
+    private float rushEncounterDuration = 40f;
+
+    [Min(0.1f)]
+    [SerializeField]
+    private float rushAssaultInterval = 4f;
+
+    [Min(1)]
+    [SerializeField]
+    private int rushMaxAlive = 20;
+
+
     private readonly EliminationSpawnDirector
         encounterSpawnDirector =
             new EliminationSpawnDirector();
@@ -45,10 +60,42 @@ public partial class FloorManager
     private bool encounterWaveTransitioning;
 
 
+    private readonly RushSpawnDirector rushSpawnDirector =
+        new RushSpawnDirector();
+
+    private Coroutine rushTimerCoroutine;
+
+    private Coroutine rushReleaseCoroutine;
+
+    private bool rushRuntimeActive;
+
+    private bool rushSpawningEnabled;
+
+    private float rushRemainingTime;
+
+    private float rushNextAssaultRemaining;
+
+    private int rushAssaultIndex;
+
+
+    public bool IsRushEncounterActive => rushRuntimeActive;
+
+    public float RushRemainingTime => rushRemainingTime;
+
+    public float RushNextAssaultRemaining =>
+        rushNextAssaultRemaining;
+
+
     public bool IsFloorCombatComplete
     {
         get
         {
+            if (rushRuntimeActive)
+            {
+                return !rushSpawningEnabled
+                    && rushSpawnDirector.AliveCount <= 0;
+            }
+
             if (encounterRuntimeActive)
             {
                 return !encounterWaveTransitioning
@@ -75,6 +122,18 @@ public partial class FloorManager
         encounterReusedSpawnPointDelay = Mathf.Max(
             0f,
             encounterReusedSpawnPointDelay);
+
+        rushEncounterDuration = Mathf.Max(
+            1f,
+            rushEncounterDuration);
+
+        rushAssaultInterval = Mathf.Max(
+            0.1f,
+            rushAssaultInterval);
+
+        rushMaxAlive = Mathf.Max(
+            1,
+            rushMaxAlive);
     }
 
 
@@ -93,6 +152,18 @@ public partial class FloorManager
         if (floorDefinition == null)
         {
             error = "Current FloorDefinition is missing.";
+            return false;
+        }
+
+        FloorEncounterMode encounterMode =
+            floorDefinition.EncounterMode;
+
+        if (encounterMode == FloorEncounterMode.Defense)
+        {
+            error = "Defense Encounter mode is not implemented yet. "
+                + "Floor "
+                + CurrentFloor
+                + " cannot start.";
             return false;
         }
 
@@ -191,6 +262,17 @@ public partial class FloorManager
             + plan.totalQuota,
             this);
 
+        if (encounterMode == FloorEncounterMode.Rush)
+        {
+            if (!TryStartRushEncounter(out error))
+            {
+                ResetEncounterRuntime();
+                return false;
+            }
+
+            return true;
+        }
+
         if (!TryStartEncounterWave(0, out error))
         {
             ResetEncounterRuntime();
@@ -199,6 +281,298 @@ public partial class FloorManager
 
         error = string.Empty;
         return true;
+    }
+
+
+    // ==================================================
+    // Rush Encounter
+    // ==================================================
+
+    private bool TryStartRushEncounter(
+        out string error)
+    {
+        if (currentEncounterPlan == null
+            || currentEncounterPlan.waves == null
+            || currentEncounterPlan.waves.Length == 0)
+        {
+            error = "Rush Encounter requires a generated Encounter Plan.";
+            return false;
+        }
+
+        if (!rushSpawnDirector.TryBegin(
+                rushMaxAlive,
+                out error))
+        {
+            return false;
+        }
+
+        rushRuntimeActive = true;
+        rushSpawningEnabled = true;
+        rushRemainingTime = rushEncounterDuration;
+        rushNextAssaultRemaining = 0f;
+        rushAssaultIndex = 0;
+        currentWaveIndex = 0;
+        currentWaveTimer = 0f;
+        waveRunning = true;
+
+        HideWaveUI();
+
+        Debug.Log(
+            "RUSH START | Floor "
+            + CurrentFloor
+            + " | Duration "
+            + rushEncounterDuration
+            + " | Interval "
+            + rushAssaultInterval
+            + " | MaxAlive "
+            + rushMaxAlive,
+            this);
+
+        rushTimerCoroutine = StartCoroutine(
+            RushTimerRoutine());
+
+        rushReleaseCoroutine = StartCoroutine(
+            RushReleaseRoutine());
+
+        error = string.Empty;
+        return true;
+    }
+
+
+    // Assaults arrive purely on the interval. A kill never schedules one,
+    // and a still-pending backlog never delays the next arrival.
+    private IEnumerator RushTimerRoutine()
+    {
+        while (rushRuntimeActive
+            && rushSpawningEnabled
+            && !floorCleared)
+        {
+            if (rushNextAssaultRemaining <= 0f)
+            {
+                EnqueueNextRushAssault();
+                rushNextAssaultRemaining = rushAssaultInterval;
+            }
+
+            yield return null;
+
+            float delta = Time.deltaTime;
+            rushRemainingTime -= delta;
+            rushNextAssaultRemaining -= delta;
+
+            if (rushRemainingTime <= 0f)
+            {
+                rushRemainingTime = 0f;
+                break;
+            }
+        }
+
+        rushTimerCoroutine = null;
+
+        if (rushRuntimeActive)
+        {
+            ExpireRushEncounter();
+        }
+    }
+
+
+    private void EnqueueNextRushAssault()
+    {
+        EncounterWavePlan[] waves =
+            currentEncounterPlan.waves;
+
+        int templateIndex =
+            rushAssaultIndex % waves.Length;
+
+        EncounterWavePlan template =
+            waves[templateIndex];
+
+        // Spawn Point cursor and enemy tagging reuse the template index,
+        // so the existing SpawnEnemy path needs no Rush-specific branch.
+        currentWaveIndex = templateIndex;
+
+        int enqueued = rushSpawnDirector.EnqueueAssault(
+            template.spawnBag);
+
+        rushAssaultIndex++;
+
+        Debug.Log(
+            "RUSH ASSAULT "
+            + rushAssaultIndex
+            + " | Template "
+            + templateIndex
+            + " | Profile "
+            + template.profile.Profile
+            + " | Size "
+            + enqueued
+            + " | Alive "
+            + rushSpawnDirector.AliveCount
+            + " | Pending "
+            + rushSpawnDirector.PendingCount,
+            this);
+    }
+
+
+    // Releases the backlog into whatever capacity exists. The reused
+    // Spawn Point delay only applies when a full round was consumed and
+    // more enemies still need the same Spawn Points.
+    private IEnumerator RushReleaseRoutine()
+    {
+        while (rushRuntimeActive
+            && !floorCleared)
+        {
+            int spawned = SpawnEncounterEnemyRound(
+                rushSpawnDirector,
+                rushSpawnDirector.MaxAlive
+                    - rushSpawnDirector.AliveCount);
+
+            if (spawned > 0
+                && rushSpawnDirector.HasPendingSpawns
+                && rushSpawnDirector.AliveCount
+                    < rushSpawnDirector.MaxAlive)
+            {
+                yield return new WaitForSeconds(
+                    encounterReusedSpawnPointDelay);
+            }
+            else
+            {
+                yield return null;
+            }
+        }
+
+        rushReleaseCoroutine = null;
+    }
+
+
+    private void ExpireRushEncounter()
+    {
+        if (!rushSpawningEnabled)
+        {
+            return;
+        }
+
+        // Order matters: every spawn source is shut down BEFORE the field
+        // is purged, so the defeat callbacks below can never release a
+        // pending enemy or schedule another Assault.
+        rushSpawningEnabled = false;
+        rushRemainingTime = 0f;
+        rushNextAssaultRemaining = 0f;
+        waveRunning = false;
+
+        int discarded = rushSpawnDirector.PendingCount;
+
+        rushSpawnDirector.ClearPending();
+        StopRushEncounter();
+
+        int purged = PurgeEncounterEnemies(true);
+
+        Debug.Log(
+            "RUSH TIME UP | Discarded "
+            + discarded
+            + " pending | Purged "
+            + purged
+            + " | Alive "
+            + rushSpawnDirector.AliveCount,
+            this);
+
+        CheckFloorClear();
+    }
+
+
+    // playDeathPresentation: Time Up is a win, so the field clears itself
+    // through the normal enemy death path (VFX / audio / defeat report)
+    // without crediting the Player. Retry cleanup just removes them.
+    private int PurgeEncounterEnemies(
+        bool playDeathPresentation)
+    {
+        int purged = 0;
+
+        for (int i = 0; i < activeEncounterEnemies.Count; i++)
+        {
+            EnemyWaveMember member =
+                activeEncounterEnemies[i];
+
+            if (member == null)
+            {
+                continue;
+            }
+
+            if (!playDeathPresentation)
+            {
+                Destroy(member.gameObject);
+                purged++;
+                continue;
+            }
+
+            EnemyHealth health =
+                member.GetComponent<EnemyHealth>();
+
+            if (health != null)
+            {
+                health.KillForEncounterCleanup();
+            }
+            else
+            {
+                member.ReportDeath(false);
+                Destroy(member.gameObject);
+            }
+
+            purged++;
+        }
+
+        activeEncounterEnemies.Clear();
+        return purged;
+    }
+
+
+    // Rush death is a Floor retry, not a Run reset: the same Floor starts
+    // over from Assault 0 with the same Encounter seed, so SpawnCurrentFloor
+    // regenerates an identical Plan.
+    public void RestartRushEncounterIfActive()
+    {
+        if (!rushRuntimeActive)
+        {
+            return;
+        }
+
+        StopRushEncounter();
+        rushSpawnDirector.ClearPending();
+
+        int removed = PurgeEncounterEnemies(false);
+
+        Debug.Log(
+            "RUSH RETRY | Floor "
+            + CurrentFloor
+            + " | Removed "
+            + removed
+            + " enemies",
+            this);
+
+        SpawnCurrentFloor();
+    }
+
+
+    private void StopRushRelease()
+    {
+        if (rushReleaseCoroutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(rushReleaseCoroutine);
+        rushReleaseCoroutine = null;
+    }
+
+
+    private void StopRushEncounter()
+    {
+        if (rushTimerCoroutine != null)
+        {
+            StopCoroutine(rushTimerCoroutine);
+            rushTimerCoroutine = null;
+        }
+
+        StopRushRelease();
+        rushSpawningEnabled = false;
     }
 
 
@@ -322,6 +696,16 @@ public partial class FloorManager
     // through StaggerInitialBurstRoutine instead.
     private int SpawnEncounterEnemyRound(int budget)
     {
+        return SpawnEncounterEnemyRound(
+            encounterSpawnDirector,
+            budget);
+    }
+
+
+    private int SpawnEncounterEnemyRound(
+        IEncounterSpawnSource source,
+        int budget)
+    {
         if (budget <= 0)
         {
             return 0;
@@ -341,10 +725,9 @@ public partial class FloorManager
         int spawnedCount = 0;
 
         while (spawnAttempts < roundLimit
-            && encounterSpawnDirector.HasPendingSpawns
-            && encounterSpawnDirector.AliveCount
-                < encounterSpawnDirector.MaxAlive
-            && encounterSpawnDirector.TryTakeNext(
+            && source.HasPendingSpawns
+            && source.AliveCount < source.MaxAlive
+            && source.TryTakeNext(
                 out WaveEnemyType enemyType))
         {
             bool spawned = SpawnEncounterEnemy(
@@ -353,12 +736,12 @@ public partial class FloorManager
 
             if (spawned)
             {
-                encounterSpawnDirector.NotifySpawned();
+                source.NotifySpawned();
                 spawnedCount++;
             }
             else
             {
-                encounterSpawnDirector.NotifySpawnFailed();
+                source.NotifySpawnFailed();
             }
 
             spawnAttempts++;
@@ -502,6 +885,15 @@ public partial class FloorManager
     private void HandleEncounterEnemyDefeated(
         int sourceWaveIndex)
     {
+        if (rushRuntimeActive)
+        {
+            // Rush never refills on a kill. Freed capacity only lets
+            // already arrived pending enemies enter the field, which the
+            // release routine picks up on its own.
+            rushSpawnDirector.NotifyDefeated();
+            return;
+        }
+
         if (sourceWaveIndex != currentWaveIndex)
         {
             Debug.LogWarning(
@@ -677,6 +1069,7 @@ public partial class FloorManager
 
     private void StopEncounterCoroutines()
     {
+        StopRushEncounter();
         StopEncounterInitialBurst();
         StopEncounterRefill();
         StopEncounterWaveTransition();
@@ -689,5 +1082,11 @@ public partial class FloorManager
         encounterRuntimeActive = false;
         currentEncounterPlan = null;
         encounterSpawnDirector.Reset();
+        rushRuntimeActive = false;
+        rushRemainingTime = 0f;
+        rushNextAssaultRemaining = 0f;
+        rushAssaultIndex = 0;
+        rushSpawnDirector.Reset();
+        activeEncounterEnemies.Clear();
     }
 }

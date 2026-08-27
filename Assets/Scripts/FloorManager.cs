@@ -23,6 +23,11 @@ public partial class FloorManager : MonoBehaviour
     private Transform[] spawnPoints;
 
 
+    private readonly System.Collections.Generic.List<EnemyWaveMember>
+        activeEncounterEnemies =
+            new System.Collections.Generic.List<EnemyWaveMember>();
+
+
     // ==================================================
     // Floor Definitions
     // ==================================================
@@ -723,6 +728,11 @@ public partial class FloorManager : MonoBehaviour
         );
 
 
+        activeEncounterEnemies.Add(
+            member
+        );
+
+
         // ==========================================
         // Count
         // ==========================================
@@ -790,6 +800,17 @@ public partial class FloorManager : MonoBehaviour
     public void EnemyDefeated(
         int sourceWaveIndex)
     {
+        EnemyDefeated(
+            sourceWaveIndex,
+            true
+        );
+    }
+
+
+    public void EnemyDefeated(
+        int sourceWaveIndex,
+        bool grantPlayerCredit)
+    {
         if (floorCleared)
             return;
 
@@ -809,7 +830,8 @@ public partial class FloorManager : MonoBehaviour
         // 자신이 태어난 Wave의 Kill Count
         // ==========================================
 
-        if (waveKillCounts != null &&
+        if (grantPlayerCredit &&
+            waveKillCounts != null &&
             sourceWaveIndex >= 0 &&
             sourceWaveIndex <
             waveKillCounts.Length)

@@ -1312,6 +1312,13 @@ public class FloorTransitionManager : MonoBehaviour
         TeleportPlayerToSpawnPoint();
 
 
+        if (floorManager != null)
+        {
+            floorManager
+                .RestartRushEncounterIfActive();
+        }
+
+
         if (playerInkResource != null)
         {
             playerInkResource

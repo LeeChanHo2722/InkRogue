@@ -20,6 +20,10 @@ public class FloorDefinition : ScriptableObject
         FloorDifficulty.Easy;
 
     [SerializeField]
+    private FloorEncounterMode encounterMode =
+        FloorEncounterMode.Elimination;
+
+    [SerializeField]
     private EnemyCompositionDefinition enemyComposition;
 
     [SerializeField]
@@ -31,6 +35,8 @@ public class FloorDefinition : ScriptableObject
     public string FloorId => floorId;
 
     public FloorDifficulty Difficulty => difficulty;
+
+    public FloorEncounterMode EncounterMode => encounterMode;
 
     public EnemyCompositionDefinition EnemyComposition =>
         enemyComposition;
