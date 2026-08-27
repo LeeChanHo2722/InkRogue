@@ -33,9 +33,22 @@ public partial class FloorManager
     [SerializeField]
     private float rushAssaultInterval = 4f;
 
+    [Tooltip("Rush cap = Difficulty BaseMaxAlive * this + bonus. "
+        + "Rush deliberately shows far more enemies at once than "
+        + "Elimination, so it scales the same Difficulty value up.")]
     [Min(1)]
     [SerializeField]
-    private int rushMaxAlive = 20;
+    private int rushMaxAlivePerBase = 3;
+
+    [Min(0)]
+    [SerializeField]
+    private int rushMaxAliveBonus = 2;
+
+    [Tooltip("Seconds added per point of BaseMaxAlive below Normal, and "
+        + "subtracted per point above. Normal keeps the tuned interval.")]
+    [Min(0f)]
+    [SerializeField]
+    private float rushAssaultIntervalPerBase = 0.5f;
 
 
     [Header("Defense Encounter")]
@@ -107,6 +120,8 @@ public partial class FloorManager
     private float rushNextAssaultRemaining;
 
     private int rushAssaultIndex;
+
+    private float runtimeRushAssaultInterval;
 
 
     public bool IsRushEncounterActive => rushRuntimeActive;
@@ -240,9 +255,17 @@ public partial class FloorManager
             0.1f,
             rushAssaultInterval);
 
-        rushMaxAlive = Mathf.Max(
+        rushMaxAlivePerBase = Mathf.Max(
             1,
-            rushMaxAlive);
+            rushMaxAlivePerBase);
+
+        rushMaxAliveBonus = Mathf.Max(
+            0,
+            rushMaxAliveBonus);
+
+        rushAssaultIntervalPerBase = Mathf.Max(
+            0f,
+            rushAssaultIntervalPerBase);
 
         defenseAssaultDuration = Mathf.Max(
             1f,
@@ -397,7 +420,9 @@ public partial class FloorManager
 
         if (encounterMode == FloorEncounterMode.Rush)
         {
-            if (!TryStartRushEncounter(out error))
+            if (!TryStartRushEncounter(
+                    difficulty,
+                    out error))
             {
                 ResetEncounterRuntime();
                 return false;
@@ -920,6 +945,7 @@ public partial class FloorManager
     // ==================================================
 
     private bool TryStartRushEncounter(
+        EncounterDifficultyDefinition difficulty,
         out string error)
     {
         if (currentEncounterPlan == null
@@ -929,6 +955,12 @@ public partial class FloorManager
             error = "Rush Encounter requires a generated Encounter Plan.";
             return false;
         }
+
+        int rushMaxAlive =
+            GetRushMaxAlive(difficulty);
+
+        runtimeRushAssaultInterval =
+            GetRushAssaultInterval(difficulty);
 
         if (!rushSpawnDirector.TryBegin(
                 rushMaxAlive,
@@ -954,7 +986,9 @@ public partial class FloorManager
             + " | Duration "
             + rushEncounterDuration
             + " | Interval "
-            + rushAssaultInterval
+            + runtimeRushAssaultInterval
+            + " | Difficulty "
+            + difficulty.Difficulty
             + " | MaxAlive "
             + rushMaxAlive,
             this);
@@ -970,6 +1004,47 @@ public partial class FloorManager
     }
 
 
+    // Difficulty already drives the Assault spawn bags through the Plan;
+    // this is the second axis, how much of that backlog can be on the field
+    // at once. Deterministic, and it consumes no Encounter seed.
+    private int GetRushMaxAlive(
+        EncounterDifficultyDefinition difficulty)
+    {
+        int baseMaxAlive =
+            difficulty != null
+                ? difficulty.BaseMaxAlive
+                : 1;
+
+        return Mathf.Max(
+            1,
+            baseMaxAlive * rushMaxAlivePerBase
+                + rushMaxAliveBonus);
+    }
+
+
+    // Third pressure axis: how fast the next Assault arrives. Uses the same
+    // BaseMaxAlive the cap does, measured against Normal so Normal keeps the
+    // tuned interval exactly. Deterministic, no Encounter seed consumed.
+    private float GetRushAssaultInterval(
+        EncounterDifficultyDefinition difficulty)
+    {
+        if (difficulty == null
+            || normalEncounterDifficulty == null)
+        {
+            return rushAssaultInterval;
+        }
+
+        int step =
+            normalEncounterDifficulty.BaseMaxAlive
+                - difficulty.BaseMaxAlive;
+
+        return Mathf.Max(
+            0.1f,
+            rushAssaultInterval
+                + step * rushAssaultIntervalPerBase);
+    }
+
+
     // Assaults arrive purely on the interval. A kill never schedules one,
     // and a still-pending backlog never delays the next arrival.
     private IEnumerator RushTimerRoutine()
@@ -981,7 +1056,8 @@ public partial class FloorManager
             if (rushNextAssaultRemaining <= 0f)
             {
                 EnqueueNextRushAssault();
-                rushNextAssaultRemaining = rushAssaultInterval;
+                rushNextAssaultRemaining =
+                    runtimeRushAssaultInterval;
             }
 
             yield return null;
