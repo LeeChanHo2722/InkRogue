@@ -43,6 +43,7 @@ MonoBehaviour:
       killRatioToAdvance: 0.667
   floorId: '3 F '
   difficulty: 2
+  encounterMode: 2
   enemyComposition: {fileID: 11400000, guid: a2b3c4d5e6f7488990abcdef12345678, type: 2}
   pairedPower: {fileID: 0}
   map: {fileID: 11400000, guid: 5d3dbf82243d51d46b01059aa06c880b, type: 2}
