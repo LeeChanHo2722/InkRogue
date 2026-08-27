@@ -1,6 +1,10 @@
 using UnityEngine;
 
-public class ShooterWeaponBehaviour
+// Second main weapon. Slower than the Shooter on the first shot, but a
+// sustained trigger spins it up to a very high rate of fire - at the cost
+// of accuracy. One spinRatio drives both fire rate and spread, so the two
+// can never disagree.
+public class MachineGunWeaponBehaviour
     : PlayerWeaponBehaviour
 {
     // ==================================================
@@ -11,7 +15,9 @@ public class ShooterWeaponBehaviour
     {
         public float nextFireTime;
 
-        public int continuousShotCount;
+        public float spinRatio;
+
+        public bool heldThisFrame;
 
         public bool isUsing;
     }
@@ -28,24 +34,69 @@ public class ShooterWeaponBehaviour
 
 
     // ==================================================
-    // Shooter Config
-    //
-    // 기존 PlayerShoot에 있던 설정을
-    // ShooterWeaponBehaviour가 직접 소유한다.
+    // Machine Gun Config
     // ==================================================
 
-    [Header("Shooter Config")]
+    [Header("Machine Gun Config")]
 
     [SerializeField]
     private GameObject bulletPrefab;
 
 
-    [SerializeField]
-    private float fireRate = 6f;
-
-
+    [Tooltip("Damage matches the Shooter: the strength is the ramp.")]
     [SerializeField]
     private float bulletDamage = 1f;
+
+
+    [Min(0.01f)]
+    [SerializeField]
+    private float initialFireRate = 4f;
+
+
+    [Min(0.01f)]
+    [SerializeField]
+    private float maxFireRate = 12f;
+
+
+    [Tooltip("Seconds of continuous fire to reach max spin.")]
+    [Min(0.01f)]
+    [SerializeField]
+    private float accelerationTime = 1.5f;
+
+
+    [Tooltip("Seconds to fall back from max spin to none.")]
+    [Min(0.01f)]
+    [SerializeField]
+    private float spinDownTime = 0.5f;
+
+
+    // ==================================================
+    // Spread
+    // ==================================================
+
+    [Header("Spread")]
+
+    [Min(0f)]
+    [SerializeField]
+    private float initialSpreadAngle = 4f;
+
+
+    [Min(0f)]
+    [SerializeField]
+    private float maxSpreadAngle = 15f;
+
+
+    // ==================================================
+    // Range
+    // ==================================================
+
+    [Header("Range")]
+
+    [Tooltip("Multiplies the Bullet Prefab lifetime, which is what "
+        + "actually decides range (speed x lifeTime).")]
+    [Min(0.1f)]
+    [SerializeField]
+    private float rangeMultiplier = 1.25f;
 
 
     // ==================================================
@@ -54,27 +105,13 @@ public class ShooterWeaponBehaviour
 
     [Header("Ink Cost")]
 
+    [Tooltip("Percent of Max Ink per fired bullet. Per shot, not per "
+        + "second: spinning up to 12 shots/sec must actually cost more "
+        + "ink, not become three times more efficient.")]
     [SerializeField]
     [Range(0f, 1f)]
-    [Tooltip("최대 Ink 기준 초당 소비 비율")]
-    private float inkUsePerSecondPercent =
-        0.10f;
-
-
-    // ==================================================
-    // Spray
-    // ==================================================
-
-    [Header("Spray")]
-
-    [SerializeField]
-    private float spreadIncreasePerShot =
-        2.5f;
-
-
-    [SerializeField]
-    private float maxSpreadAngle =
-        8f;
+    private float inkUsePerShotPercent =
+        0.0125f;
 
 
     // ==================================================
@@ -123,6 +160,7 @@ public class ShooterWeaponBehaviour
                 .isUsing;
     }
 
+
     // ==================================================
     // Upgrade API
     // ==================================================
@@ -131,8 +169,19 @@ public class ShooterWeaponBehaviour
         bulletDamage;
 
 
-    public float FireRate =>
-        fireRate;
+    public float InitialFireRate =>
+        initialFireRate;
+
+
+    public float MaxFireRate =>
+        maxFireRate;
+
+
+    public float SpinRatio =>
+        Mathf.Max(
+            rightState.spinRatio,
+            leftState.spinRatio
+        );
 
 
     public void AddBulletDamage(
@@ -159,14 +208,24 @@ public class ShooterWeaponBehaviour
         }
 
 
-        fireRate =
+        initialFireRate =
             Mathf.Max(
                 0.01f,
-                fireRate
+                initialFireRate
+                *
+                multiplier
+            );
+
+
+        maxFireRate =
+            Mathf.Max(
+                initialFireRate,
+                maxFireRate
                 *
                 multiplier
             );
     }
+
 
     // ==================================================
     // Awake
@@ -179,6 +238,47 @@ public class ShooterWeaponBehaviour
 
 
     // ==================================================
+    // Spin Down
+    //
+    // Runs after every slot had its chance to fire this frame, so a slot
+    // that was not held decays instead of dropping to zero instantly.
+    // ==================================================
+
+    private void LateUpdate()
+    {
+        TickSpin(rightState);
+        TickSpin(leftState);
+    }
+
+
+    private void TickSpin(
+        SlotRuntimeState state
+    )
+    {
+        if (!state.heldThisFrame &&
+            state.spinRatio > 0f)
+        {
+            state.spinRatio =
+                Mathf.Max(
+                    0f,
+                    state.spinRatio
+                    -
+                    Time.deltaTime
+                    /
+                    Mathf.Max(
+                        0.01f,
+                        spinDownTime
+                    )
+                );
+        }
+
+
+        state.heldThisFrame =
+            false;
+    }
+
+
+    // ==================================================
     // Press
     // ==================================================
 
@@ -186,18 +286,10 @@ public class ShooterWeaponBehaviour
         WeaponUseContext context
     )
     {
-        SlotRuntimeState state =
-            GetState(
-                context.SlotSide
-            );
-
-
-        state.continuousShotCount =
-            0;
-
-
-        state.isUsing =
-            false;
+        // Spin is deliberately NOT reset here: a short tap-off keeps the
+        // rhythm going, a long pause decays back to the initial rate.
+        GetState(context.SlotSide)
+            .isUsing = false;
     }
 
 
@@ -214,10 +306,6 @@ public class ShooterWeaponBehaviour
                 context.SlotSide
             );
 
-
-        // ==========================================
-        // Context
-        // ==========================================
 
         if (context.Controller == null ||
             context.Weapon == null)
@@ -241,7 +329,6 @@ public class ShooterWeaponBehaviour
         }
 
 
-
         // ==========================================
         // Ink Resource
         // ==========================================
@@ -253,10 +340,6 @@ public class ShooterWeaponBehaviour
             return;
         }
 
-
-        // ==========================================
-        // Ink Empty
-        // ==========================================
 
         if (inkResource.IsEmpty)
         {
@@ -272,8 +355,6 @@ public class ShooterWeaponBehaviour
         }
 
 
-        // 다음 유효한 공격 시
-        // Forced Hand 해제
         if (context.Controller.IsForcedHand(
                 context.SlotSide
             ))
@@ -285,10 +366,6 @@ public class ShooterWeaponBehaviour
         }
 
 
-        // ==========================================
-        // Bullet Prefab
-        // ==========================================
-
         if (bulletPrefab == null)
         {
             StopSlot(state);
@@ -296,15 +373,6 @@ public class ShooterWeaponBehaviour
             return;
         }
 
-
-        // ==========================================
-        // Use Point
-        //
-        // 더 이상 Legacy firePoint를 사용하지 않는다.
-        //
-        // Right Slot -> RightFirePoint
-        // Left Slot  -> LeftFirePoint
-        // ==========================================
 
         Transform usePoint =
             context.UsePoint;
@@ -318,42 +386,30 @@ public class ShooterWeaponBehaviour
         }
 
 
-        // ==========================================
-        // Ink Cost
-        // ==========================================
-
-        float inkCostThisFrame =
-            inkResource.MaxInk
-            *
-            inkUsePerSecondPercent
-            *
-            context.InkCostMultiplier
-            *
-            Time.deltaTime;
-
-
-        float actualSpent =
-            inkResource.SpendInk(
-                inkCostThisFrame
-            );
-
-
-        if (actualSpent <= 0f)
-        {
-            context.Controller.SetForcedHand(
-                context.SlotSide,
-                true
-            );
-
-
-            StopSlot(state);
-
-            return;
-        }
-
-
         state.isUsing =
             true;
+
+
+        // ==========================================
+        // Spin Up
+        // ==========================================
+
+        state.heldThisFrame =
+            true;
+
+
+        state.spinRatio =
+            Mathf.Min(
+                1f,
+                state.spinRatio
+                +
+                Time.deltaTime
+                /
+                Mathf.Max(
+                    0.01f,
+                    accelerationTime
+                )
+            );
 
 
         // ==========================================
@@ -367,24 +423,52 @@ public class ShooterWeaponBehaviour
         }
 
 
-        Shoot(
-            context,
-            usePoint,
-            state
-        );
+        // Ink is charged per bullet, and only once one actually spawned.
+        // A frame blocked by the fire-rate cooldown costs nothing.
+        if (!Shoot(
+                context,
+                usePoint,
+                state
+            ))
+        {
+            return;
+        }
 
 
-        float safeFireRate =
+        float inkCostThisShot =
+            inkResource.MaxInk
+            *
+            inkUsePerShotPercent
+            *
+            context.InkCostMultiplier;
+
+
+        if (inkResource.SpendInk(
+                inkCostThisShot
+            ) <= 0f)
+        {
+            context.Controller.SetForcedHand(
+                context.SlotSide,
+                true
+            );
+        }
+
+
+        float currentFireRate =
             Mathf.Max(
                 0.01f,
-                fireRate
+                Mathf.Lerp(
+                    initialFireRate,
+                    maxFireRate,
+                    state.spinRatio
+                )
             );
 
 
         state.nextFireTime =
             Time.time
             +
-            1f / safeFireRate;
+            1f / currentFireRate;
     }
 
 
@@ -406,30 +490,22 @@ public class ShooterWeaponBehaviour
 
     // ==================================================
     // Cancel All
+    //
+    // A weapon swap or a death is a hard stop, so the spin is cleared.
     // ==================================================
 
     public override void CancelUse()
     {
-        StopSlot(
-            rightState
-        );
-
-
-        StopSlot(
-            leftState
-        );
+        ResetSlot(rightState);
+        ResetSlot(leftState);
     }
 
-
-    // ==================================================
-    // Cancel One Slot
-    // ==================================================
 
     public override void CancelUse(
         WeaponSlotSide side
     )
     {
-        StopSlot(
+        ResetSlot(
             GetState(side)
         );
     }
@@ -439,7 +515,7 @@ public class ShooterWeaponBehaviour
     // Shoot
     // ==================================================
 
-    private void Shoot(
+    private bool Shoot(
         WeaponUseContext context,
         Transform usePoint,
         SlotRuntimeState state
@@ -452,51 +528,37 @@ public class ShooterWeaponBehaviour
         }
 
 
-        // ==========================================
-        // UsePoint -> Mouse Aim
-        //
-        // Same math as before, shared with the Machine Gun.
-        // ==========================================
-
         if (!WeaponAim.TryGetAimAngle(
                 usePoint,
                 mainCamera,
                 out float baseAngle
             ))
         {
-            return;
+            return false;
         }
 
 
         // ==========================================
         // Spread
         //
-        // 첫 발은 정확.
-        // 연속 사격부터 확산.
+        // Same spinRatio as the fire rate: faster always means wider.
         // ==========================================
 
+        float currentSpread =
+            Mathf.Lerp(
+                initialSpreadAngle,
+                maxSpreadAngle,
+                state.spinRatio
+            );
+
+
         float spreadAngle =
-            0f;
-
-
-        if (state.continuousShotCount > 0)
-        {
-            float currentMaxSpread =
-                Mathf.Min(
-                    state.continuousShotCount
-                    *
-                    spreadIncreasePerShot,
-
-                    maxSpreadAngle
-                );
-
-
-            spreadAngle =
-                Random.Range(
-                    -currentMaxSpread,
-                    currentMaxSpread
-                );
-        }
+            currentSpread > 0f
+                ? Random.Range(
+                    -currentSpread,
+                    currentSpread
+                )
+                : 0f;
 
 
         Quaternion bulletRotation =
@@ -509,10 +571,6 @@ public class ShooterWeaponBehaviour
             );
 
 
-        // ==========================================
-        // Spawn
-        // ==========================================
-
         GameObject bulletObject =
             Instantiate(
                 bulletPrefab,
@@ -520,10 +578,6 @@ public class ShooterWeaponBehaviour
                 bulletRotation
             );
 
-
-        // ==========================================
-        // Slot Damage Multiplier
-        // ==========================================
 
         Bullet bulletComponent =
             bulletObject.GetComponent<
@@ -537,12 +591,14 @@ public class ShooterWeaponBehaviour
                 bulletDamage
                 *
                 context.DamageMultiplier;
+
+
+            // Range = speed x lifeTime, and Start() has not run yet, so
+            // stretching the lifetime here is what extends the reach.
+            bulletComponent.lifeTime *=
+                rangeMultiplier;
         }
 
-
-        // ==========================================
-        // Audio
-        // ==========================================
 
         if (GameAudioManager.Instance != null)
         {
@@ -551,17 +607,13 @@ public class ShooterWeaponBehaviour
         }
 
 
-        // ==========================================
-        // Ink Start
-        // ==========================================
-
         shotInkStart?
             .PaintShotStart(
                 usePoint.position
             );
 
 
-        state.continuousShotCount++;
+        return true;
     }
 
 
@@ -590,10 +642,23 @@ public class ShooterWeaponBehaviour
     {
         state.isUsing =
             false;
+    }
 
 
-        state.continuousShotCount =
-            0;
+    private void ResetSlot(
+        SlotRuntimeState state
+    )
+    {
+        state.isUsing =
+            false;
+
+
+        state.spinRatio =
+            0f;
+
+
+        state.heldThisFrame =
+            false;
     }
 
 
@@ -602,7 +667,7 @@ public class ShooterWeaponBehaviour
     // ==================================================
 
     [ContextMenu(
-        "AUTO FIND - Shooter References"
+        "AUTO FIND - Machine Gun References"
     )]
     private void AutoFindReferences()
     {
