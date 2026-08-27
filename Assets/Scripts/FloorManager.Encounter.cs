@@ -79,6 +79,64 @@ public partial class FloorManager
         new Vector2(1.5f, 0f);
 
 
+    [Header("Floor Progression")]
+
+    [Tooltip("Quota multiplier gained per Floor beyond the first.")]
+    [Min(0f)]
+    [SerializeField]
+    private float quotaGrowthPerFloor = 0.04f;
+
+    [Tooltip("Caps the multiplier, never the absolute quota, so the "
+        + "Easy/Normal/Hard gap survives at depth.")]
+    [Min(1f)]
+    [SerializeField]
+    private float maxQuotaMultiplier = 2.2f;
+
+    [Tooltip("Enemy HP multiplier gained per Floor up to the knee.")]
+    [Min(0f)]
+    [SerializeField]
+    private float hpGrowthPerFloor = 0.03f;
+
+    [Min(1)]
+    [SerializeField]
+    private int hpSoftKneeFloor = 30;
+
+    [Tooltip("Much slower growth past the knee Floor. No cap.")]
+    [Min(0f)]
+    [SerializeField]
+    private float hpTailGrowthPerFloor = 0.01f;
+
+    [Header("Floor Progression - Elimination / Rush")]
+
+    [Min(1)]
+    [SerializeField]
+    private int combatFastStepFloors = 5;
+
+    [Min(0)]
+    [SerializeField]
+    private int combatSoftKneeBonus = 5;
+
+    [Min(1)]
+    [SerializeField]
+    private int combatTailStepFloors = 20;
+
+    [Header("Floor Progression - Defense")]
+
+    [Tooltip("Defense grows far slower: Map geometry and a Target to "
+        + "protect make simultaneous pressure hit much harder.")]
+    [Min(1)]
+    [SerializeField]
+    private int defenseFastStepFloors = 8;
+
+    [Min(0)]
+    [SerializeField]
+    private int defenseSoftKneeBonus = 3;
+
+    [Min(1)]
+    [SerializeField]
+    private int defenseTailStepFloors = 30;
+
+
     private readonly EliminationSpawnDirector
         encounterSpawnDirector =
             new EliminationSpawnDirector();
@@ -102,6 +160,20 @@ public partial class FloorManager
 
     private FloorEncounterMode currentEncounterMode =
         FloorEncounterMode.Elimination;
+
+    private int currentCombatMaxAliveBonus;
+
+    private int currentDefenseMaxAliveBonus;
+
+
+    // Third progression axis. Pure function of the Floor, so it needs no
+    // reset and every spawn path reads the same value.
+    public float CurrentEnemyHealthMultiplier =>
+        EncounterFloorScaling.HealthMultiplier(
+            CurrentFloor,
+            hpGrowthPerFloor,
+            hpSoftKneeFloor,
+            hpTailGrowthPerFloor);
 
 
     private readonly RushSpawnDirector rushSpawnDirector =
@@ -267,6 +339,50 @@ public partial class FloorManager
             0f,
             rushAssaultIntervalPerBase);
 
+        quotaGrowthPerFloor = Mathf.Max(
+            0f,
+            quotaGrowthPerFloor);
+
+        maxQuotaMultiplier = Mathf.Max(
+            1f,
+            maxQuotaMultiplier);
+
+        combatFastStepFloors = Mathf.Max(
+            1,
+            combatFastStepFloors);
+
+        combatSoftKneeBonus = Mathf.Max(
+            0,
+            combatSoftKneeBonus);
+
+        combatTailStepFloors = Mathf.Max(
+            1,
+            combatTailStepFloors);
+
+        defenseFastStepFloors = Mathf.Max(
+            1,
+            defenseFastStepFloors);
+
+        defenseSoftKneeBonus = Mathf.Max(
+            0,
+            defenseSoftKneeBonus);
+
+        defenseTailStepFloors = Mathf.Max(
+            1,
+            defenseTailStepFloors);
+
+        hpGrowthPerFloor = Mathf.Max(
+            0f,
+            hpGrowthPerFloor);
+
+        hpSoftKneeFloor = Mathf.Max(
+            1,
+            hpSoftKneeFloor);
+
+        hpTailGrowthPerFloor = Mathf.Max(
+            0f,
+            hpTailGrowthPerFloor);
+
         defenseAssaultDuration = Mathf.Max(
             1f,
             defenseAssaultDuration);
@@ -372,10 +488,40 @@ public partial class FloorManager
                 this);
         }
 
+        float quotaMultiplier =
+            EncounterFloorScaling.QuotaMultiplier(
+                CurrentFloor,
+                quotaGrowthPerFloor,
+                maxQuotaMultiplier);
+
+        int scaledMinQuota = Mathf.RoundToInt(
+            difficulty.MinTotalQuota * quotaMultiplier);
+
+        int scaledMaxQuota = Mathf.Max(
+            scaledMinQuota,
+            Mathf.RoundToInt(
+                difficulty.MaxTotalQuota * quotaMultiplier));
+
+        currentCombatMaxAliveBonus =
+            EncounterFloorScaling.MaxAliveBonus(
+                CurrentFloor,
+                combatFastStepFloors,
+                combatSoftKneeBonus,
+                combatTailStepFloors);
+
+        currentDefenseMaxAliveBonus =
+            EncounterFloorScaling.MaxAliveBonus(
+                CurrentFloor,
+                defenseFastStepFloors,
+                defenseSoftKneeBonus,
+                defenseTailStepFloors);
+
         if (!EncounterPlanGenerator.TryGenerate(
                 difficulty,
                 seed,
                 isFirstFloor,
+                scaledMinQuota,
+                scaledMaxQuota,
                 out EncounterPlan plan,
                 out string generationError))
         {
@@ -404,7 +550,15 @@ public partial class FloorManager
             + " | Seed "
             + seed
             + " | TotalQuota "
-            + plan.totalQuota,
+            + plan.totalQuota
+            + " | QuotaMultiplier x"
+            + quotaMultiplier.ToString("0.00")
+            + " ("
+            + scaledMinQuota
+            + "~"
+            + scaledMaxQuota
+            + ") | EnemyHP x"
+            + CurrentEnemyHealthMultiplier.ToString("0.00"),
             this);
 
         if (encounterMode == FloorEncounterMode.Defense)
@@ -491,6 +645,9 @@ public partial class FloorManager
             }
         }
 
+        // Defense uses its own, much slower Floor curve.
+        defenseMaxAlive += currentDefenseMaxAliveBonus;
+
         if (!defenseSpawnDirector.TryBegin(
                 defenseMaxAlive,
                 out error))
@@ -522,6 +679,8 @@ public partial class FloorManager
             + CurrentFloor
             + " | Assaults "
             + currentEncounterPlan.waves.Length
+            + " | DefenseBonus +"
+            + currentDefenseMaxAliveBonus
             + " | MaxAlive "
             + defenseMaxAlive
             + " | AssaultDuration "
@@ -989,6 +1148,8 @@ public partial class FloorManager
             + runtimeRushAssaultInterval
             + " | Difficulty "
             + difficulty.Difficulty
+            + " | CombatBonus +"
+            + currentCombatMaxAliveBonus
             + " | MaxAlive "
             + rushMaxAlive,
             this);
@@ -1014,6 +1175,10 @@ public partial class FloorManager
             difficulty != null
                 ? difficulty.BaseMaxAlive
                 : 1;
+
+        // Floor progression raises the Difficulty base first, then Rush
+        // amplifies it, so depth and Difficulty stay on the same axis.
+        baseMaxAlive += currentCombatMaxAliveBonus;
 
         return Mathf.Max(
             1,
@@ -1380,6 +1545,7 @@ public partial class FloorManager
 
         if (!encounterSpawnDirector.TryBeginWave(
                 wave,
+                currentCombatMaxAliveBonus,
                 out error))
         {
             return false;
@@ -1406,8 +1572,12 @@ public partial class FloorManager
             + " | Quota "
             + wave.waveQuota
             + " | MaxAlive "
+            + encounterSpawnDirector.MaxAlive
+            + " (Plan "
             + wave.maxAlive
-            + " | RefillDelay "
+            + " + Floor "
+            + currentCombatMaxAliveBonus
+            + ") | RefillDelay "
             + wave.refillDelay,
             this);
 
@@ -1847,6 +2017,8 @@ public partial class FloorManager
         StopEncounterCoroutines();
         encounterRuntimeActive = false;
         currentEncounterPlan = null;
+        currentCombatMaxAliveBonus = 0;
+        currentDefenseMaxAliveBonus = 0;
         encounterSpawnDirector.Reset();
         rushRuntimeActive = false;
         rushRemainingTime = 0f;

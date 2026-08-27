@@ -6,6 +6,7 @@ public sealed class EliminationSpawnDirector : IEncounterSpawnSource
     private int spawnCursor;
     private int aliveCount;
     private bool spawnReserved;
+    private int maxAliveBonus;
 
     public bool HasPendingSpawns =>
         currentWave != null
@@ -23,9 +24,11 @@ public sealed class EliminationSpawnDirector : IEncounterSpawnSource
                 currentWave.spawnBag.Length - spawnCursor)
             : 0;
 
+    // Plan value plus the current Floor's progression bonus, so the Plan
+    // itself keeps its Difficulty-only semantics.
     public int MaxAlive =>
         currentWave != null
-            ? currentWave.maxAlive
+            ? Math.Max(1, currentWave.maxAlive + maxAliveBonus)
             : 0;
 
     public float RefillDelay =>
@@ -41,6 +44,7 @@ public sealed class EliminationSpawnDirector : IEncounterSpawnSource
 
     public bool TryBeginWave(
         EncounterWavePlan plan,
+        int floorMaxAliveBonus,
         out string error)
     {
         if (plan == null)
@@ -73,6 +77,7 @@ public sealed class EliminationSpawnDirector : IEncounterSpawnSource
         }
 
         currentWave = plan;
+        maxAliveBonus = Math.Max(0, floorMaxAliveBonus);
         spawnCursor = 0;
         aliveCount = 0;
         spawnReserved = false;
@@ -129,6 +134,7 @@ public sealed class EliminationSpawnDirector : IEncounterSpawnSource
     public void Reset()
     {
         currentWave = null;
+        maxAliveBonus = 0;
         spawnCursor = 0;
         aliveCount = 0;
         spawnReserved = false;

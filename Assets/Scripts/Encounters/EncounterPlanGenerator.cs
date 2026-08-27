@@ -22,10 +22,15 @@ public static class EncounterPlanGenerator
         EncounterProfile.Mixed
     };
 
+    // minTotalQuota / maxTotalQuota arrive already scaled for the current
+    // Floor. Generation and validation both use them, so a scaled Plan can
+    // never fail against the unscaled asset range.
     public static bool TryGenerate(
         EncounterDifficultyDefinition difficulty,
         int seed,
         bool isFirstFloor,
+        int minTotalQuota,
+        int maxTotalQuota,
         out EncounterPlan plan,
         out string error)
     {
@@ -40,9 +45,10 @@ public static class EncounterPlanGenerator
         }
 
         int totalQuota = GenerateTotalQuota(
-            difficulty,
             seed,
-            isFirstFloor);
+            isFirstFloor,
+            minTotalQuota,
+            maxTotalQuota);
 
         if (!TryGenerateWaveQuotas(
                 totalQuota,
@@ -128,6 +134,8 @@ public static class EncounterPlanGenerator
                 plan,
                 difficulty,
                 isFirstFloor,
+                minTotalQuota,
+                maxTotalQuota,
                 out error))
         {
             plan = null;
@@ -231,9 +239,10 @@ public static class EncounterPlanGenerator
     }
 
     private static int GenerateTotalQuota(
-        EncounterDifficultyDefinition difficulty,
         int seed,
-        bool isFirstFloor)
+        bool isFirstFloor,
+        int minTotalQuota,
+        int maxTotalQuota)
     {
         Random random = new Random(
             DeriveSeed(seed, TotalQuotaSeedSalt));
@@ -242,8 +251,8 @@ public static class EncounterPlanGenerator
             ? random.Next(14, 16)
             : NextInclusive(
                 random,
-                difficulty.MinTotalQuota,
-                difficulty.MaxTotalQuota);
+                minTotalQuota,
+                maxTotalQuota);
     }
 
     private static bool TryGenerateWaveQuotas(
@@ -397,14 +406,16 @@ public static class EncounterPlanGenerator
         EncounterPlan plan,
         EncounterDifficultyDefinition difficulty,
         bool isFirstFloor,
+        int minTotalQuota,
+        int maxTotalQuota,
         out string error)
     {
         int minQuota = isFirstFloor
             ? 14
-            : difficulty.MinTotalQuota;
+            : minTotalQuota;
         int maxQuota = isFirstFloor
             ? 15
-            : difficulty.MaxTotalQuota;
+            : maxTotalQuota;
 
         if (plan.totalQuota < minQuota
             || plan.totalQuota > maxQuota

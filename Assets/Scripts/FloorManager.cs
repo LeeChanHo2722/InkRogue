@@ -721,6 +721,20 @@ public partial class FloorManager : MonoBehaviour
         // Wave 정보 부여
         // ==========================================
 
+        // Single spawn path for every normal Encounter enemy, so no AI
+        // script needs its own copy. Boss adds never come through here.
+        EnemyHealth health =
+            enemy.GetComponent<EnemyHealth>();
+
+
+        if (health != null)
+        {
+            health.ApplyFloorHealthMultiplier(
+                CurrentEnemyHealthMultiplier
+            );
+        }
+
+
         EnemyWaveMember member =
             enemy.GetComponent<
                 EnemyWaveMember

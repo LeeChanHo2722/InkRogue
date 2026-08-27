@@ -62,6 +62,47 @@ public class EnemyHealth : MonoBehaviour
     private bool isDead = false;
 
 
+    private bool floorHealthApplied = false;
+
+
+    // ==================================================
+    // Floor Scaling
+    // ==================================================
+
+    // Applied once, on the spawned instance only. maxHealth here is the
+    // Instantiate copy, so the Prefab asset value is never touched.
+    public void ApplyFloorHealthMultiplier(
+        float multiplier)
+    {
+        if (floorHealthApplied)
+        {
+            return;
+        }
+
+
+        floorHealthApplied = true;
+
+
+        if (multiplier <= 0f)
+        {
+            return;
+        }
+
+
+        maxHealth =
+            Mathf.Max(
+                1,
+                Mathf.RoundToInt(
+                    maxHealth * multiplier
+                )
+            );
+
+
+        currentHealth =
+            maxHealth;
+    }
+
+
     // ==================================================
     // Awake
     // ==================================================
