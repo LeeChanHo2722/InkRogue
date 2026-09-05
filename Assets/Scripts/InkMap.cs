@@ -1010,6 +1010,362 @@ public class InkMap : MonoBehaviour
 
 
     // ==================================================
+    // Spin Slash
+    //
+    // A spinning cut is read from its direction of travel, so the mark it
+    // leaves is a spiral, not a splash. Two arms sweep outward half a turn
+    // apart, drawn as a continuous brush stroke, and the spin tears ink
+    // off the outer edge and flings it clear. The centre stays empty:
+    // filling it is what made this look like a stamp.
+    //
+    // Structure is deterministic, surface is not. The random here only
+    // roughens the stroke; it never decides where the arms go.
+    // ==================================================
+
+    private const float SpinSlashTurns = 0.95f;
+
+    // Clockwise, every time, so the attack keeps one identity.
+    private const float SpinSlashDirection = -1f;
+
+
+    public void PaintSpinSlash(
+        Vector2 center,
+        float radius,
+        InkTeam team,
+        int samplesPerArm = 18,
+        int flingCount = 10)
+    {
+        if (!IsReady)
+            return;
+
+
+        float twoPi =
+            Mathf.PI * 2f;
+
+
+        // Only the orientation of the whole figure varies between swings.
+        float startAngle =
+            Random.Range(
+                0f,
+                twoPi
+            );
+
+
+        float sweep =
+            SpinSlashDirection
+            * twoPi
+            * SpinSlashTurns;
+
+
+        for (int arm = 0;
+             arm < 2;
+             arm++)
+        {
+            PaintSpinSlashArm(
+                center,
+                radius,
+                team,
+                startAngle + arm * Mathf.PI,
+                sweep,
+                samplesPerArm
+            );
+        }
+
+
+        for (int i = 0;
+             i < flingCount;
+             i++)
+        {
+            PaintSpinSlashFling(
+                center,
+                radius,
+                team,
+                sweep
+            );
+        }
+    }
+
+
+    // One arm, drawn as a chain of connected strokes rather than a row of
+    // dots. Consecutive samples share their brush radius, so the ribbon
+    // swells and thins along its length instead of beading up.
+    private void PaintSpinSlashArm(
+        Vector2 center,
+        float radius,
+        InkTeam team,
+        float startAngle,
+        float sweep,
+        int sampleCount)
+    {
+        if (sampleCount < 2)
+            sampleCount = 2;
+
+
+        float baseBrush =
+            radius * 0.07f;
+
+
+        Vector2 previousPoint =
+            Vector2.zero;
+
+        float previousBrush = 0f;
+
+
+        for (int i = 0;
+             i < sampleCount;
+             i++)
+        {
+            float t =
+                i / (float)(sampleCount - 1);
+
+
+            // Archimedean: the angle winds while the radius grows, so the
+            // path can never close into a ring.
+            float sampleRadius =
+                Mathf.Lerp(
+                    radius * 0.35f,
+                    radius * 1.10f,
+                    t
+                )
+                * Random.Range(
+                    0.97f,
+                    1.03f
+                );
+
+
+            float angle =
+                startAngle
+                + sweep * t
+                + Random.Range(
+                    -0.03f,
+                    0.03f
+                );
+
+
+            Vector2 point =
+                center
+                + new Vector2(
+                    Mathf.Cos(angle),
+                    Mathf.Sin(angle)
+                )
+                * sampleRadius;
+
+
+            float brush =
+                baseBrush
+                * Random.Range(
+                    0.65f,
+                    1.35f
+                );
+
+
+            if (i > 0)
+            {
+                PaintVariableStroke(
+                    previousPoint,
+                    point,
+                    previousBrush,
+                    brush,
+                    team
+                );
+            }
+
+
+            previousPoint = point;
+            previousBrush = brush;
+        }
+    }
+
+
+    // Ink torn off the outer edge of the swing. Mostly outward, but
+    // carrying enough of the spin to curve, so the spray reads as thrown
+    // rather than as an explosion going off.
+    private void PaintSpinSlashFling(
+        Vector2 center,
+        float radius,
+        InkTeam team,
+        float sweep)
+    {
+        float angle =
+            Random.Range(
+                0f,
+                Mathf.PI * 2f
+            );
+
+
+        Vector2 radial =
+            new Vector2(
+                Mathf.Cos(angle),
+                Mathf.Sin(angle)
+            );
+
+
+        Vector2 tangent =
+            new Vector2(
+                -radial.y,
+                radial.x
+            )
+            * Mathf.Sign(sweep);
+
+
+        Vector2 direction =
+            (radial * 0.75f
+                + tangent * 0.25f)
+            .normalized;
+
+
+        // Starts out at the rim, not at the centre: this is ink leaving
+        // the blade, not ink erupting from the Player.
+        Vector2 origin =
+            center
+            + radial
+            * Random.Range(
+                radius * 0.75f,
+                radius * 1.0f
+            );
+
+
+        float length =
+            Random.Range(
+                radius * 0.18f,
+                radius * 0.5f
+            );
+
+
+        // Most of them keep their tail; the rest have already broken off
+        // and travel alone, still along the same line of flight.
+        if (Random.value < 0.65f)
+        {
+            PaintFlingDroplet(
+                origin,
+                direction,
+                length,
+                radius * 0.055f,
+                team
+            );
+
+
+            return;
+        }
+
+
+        PaintCircle(
+            origin + direction * length,
+            Random.Range(
+                radius * 0.022f,
+                radius * 0.038f
+            ),
+            team
+        );
+    }
+
+
+    // ==================================================
+    // Brush Primitives
+    // ==================================================
+
+    // Connects two points with overlapping stamps, tapering from one
+    // radius to the other. Deliberately not PaintTrail: that one drops
+    // samples and jitters them sideways, which is fine for a bullet
+    // streak but dissolves a silhouette.
+    private void PaintVariableStroke(
+        Vector2 from,
+        Vector2 to,
+        float startRadius,
+        float endRadius,
+        InkTeam team)
+    {
+        float distance =
+            (to - from).magnitude;
+
+
+        if (distance <= 0.0001f)
+        {
+            PaintCircle(
+                from,
+                startRadius,
+                team
+            );
+
+
+            return;
+        }
+
+
+        // Spaced under the thinner end so the stamps always overlap and
+        // the stroke reads as one mark.
+        float spacing =
+            Mathf.Max(
+                0.02f,
+                Mathf.Min(
+                    startRadius,
+                    endRadius
+                )
+                * 0.6f
+            );
+
+
+        int steps =
+            Mathf.Max(
+                1,
+                Mathf.CeilToInt(
+                    distance / spacing
+                )
+            );
+
+
+        for (int i = 0;
+             i <= steps;
+             i++)
+        {
+            float t =
+                i / (float)steps;
+
+
+            PaintCircle(
+                Vector2.Lerp(
+                    from,
+                    to,
+                    t
+                ),
+                Mathf.Lerp(
+                    startRadius,
+                    endRadius,
+                    t
+                ),
+                team
+            );
+        }
+    }
+
+
+    // A tapered comet: fat where it tore loose, thin where it is still
+    // travelling, plus the detached bead that ran ahead of it.
+    private void PaintFlingDroplet(
+        Vector2 origin,
+        Vector2 direction,
+        float length,
+        float startRadius,
+        InkTeam team)
+    {
+        PaintVariableStroke(
+            origin,
+            origin + direction * length,
+            startRadius,
+            startRadius * 0.25f,
+            team
+        );
+
+
+        PaintCircle(
+            origin + direction * (length * 1.12f),
+            startRadius * 0.22f,
+            team
+        );
+    }
+
+
+    // ==================================================
     // Explosion
     // ==================================================
 

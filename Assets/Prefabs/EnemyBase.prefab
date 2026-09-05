@@ -107,6 +107,7 @@ GameObject:
   - component: {fileID: 1919778883653219187}
   - component: {fileID: 4810872288086018253}
   - component: {fileID: 5823182745400653478}
+  - component: {fileID: 4613521517090112210}
   m_Layer: 0
   m_Name: EnemyBase
   m_TagString: Untagged
@@ -274,3 +275,17 @@ MonoBehaviour:
   burstStartWidth: 0.12
   ringSegments: 36
   sortingOrderOffset: -1
+--- !u!114 &4613521517090112210
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2415101446515619710}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a1f2478f1b2e8643b890b40f2c96075, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyKnockbackReceiver
+  knockbackDuration: 0.18
+  maxKnockbackSpeed: 18
