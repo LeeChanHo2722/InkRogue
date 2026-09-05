@@ -11627,6 +11627,7 @@ GameObject:
   - component: {fileID: 1275632747}
   - component: {fileID: 1275632748}
   - component: {fileID: 1275632749}
+  - component: {fileID: 1275632750}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -12008,7 +12009,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerWeaponController
   rightSlot:
-    weapon: {fileID: 11400000, guid: 9b182a3d52c679147b47c1468ed3ccc0, type: 2}
+    weapon: {fileID: 11400000, guid: 8043155832304614392e319f3764d83a, type: 2}
     forcedHand: 0
   leftSlot:
     weapon: {fileID: 11400000, guid: f2bdf56fb01692c4fa1ab6f9501bdc8b, type: 2}
@@ -12055,6 +12056,49 @@ MonoBehaviour:
     type: 3}
   inputEnabled: 1
   weaponWheelDeadZone: 80
+--- !u!114 &1275632750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1275632729}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63e0fcd1056c7f841bda35aa4a41df06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BreachWeaponBehaviour
+  weaponDefinition: {fileID: 11400000, guid: 8043155832304614392e319f3764d83a, type: 2}
+  thrownWeaponPrefab: {fileID: 6999218674874438793, guid: 8f88af2f1dc15e84b9bbebc7ba323b21,
+    type: 3}
+  dashSpeed: 15
+  dashStopOffset: 0.6
+  dashArrivalDistance: 0.35
+  dashLineOfSightRadius: 0.25
+  dashLineOfSightPadding: 0.1
+  dashSlashRadius: 1.4
+  dashDamage: 10
+  dashKnockbackForce: 12
+  dashSlashMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  paintDashTrail: 1
+  recoveryContactRadius: 0.35
+  recoverySlashRadius: 2.2
+  recoverySlashDamage: 14
+  recoverySlashKnockbackForce: 16
+  recoverySlashMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  paintRecoverySlash: 1
+  recoveryInkRadius: 1.6
+  inkUsePerThrowPercent: 0.15
+  inkResource: {fileID: 1275632736}
+  playerDive: {fileID: 1275632737}
+  playerShield: {fileID: 1275632738}
+  playerMovement: {fileID: 1275632730}
+  playerRigidbody: {fileID: 1275632732}
+  playerCollider: {fileID: 1275632731}
 --- !u!1 &1298540066
 GameObject:
   m_ObjectHideFlags: 0
@@ -15779,7 +15823,9 @@ MonoBehaviour:
   encounterReusedSpawnPointDelay: 0.2
   rushEncounterDuration: 40
   rushAssaultInterval: 4
-  rushMaxAlive: 20
+  rushMaxAlivePerBase: 3
+  rushMaxAliveBonus: 2
+  rushAssaultIntervalPerBase: 0.5
   defenseAssaultDuration: 10
   defenseRestDuration: 3
   defenseRetryDelay: 0.4
@@ -15787,6 +15833,17 @@ MonoBehaviour:
   defenseTargetPrefab: {fileID: 5003468480498698902, guid: a17e36e2587b9e44cb1c34bdef8df8c8,
     type: 3}
   defenseTargetFallbackOffset: {x: 1.5, y: 0}
+  quotaGrowthPerFloor: 0.04
+  maxQuotaMultiplier: 2.2
+  hpGrowthPerFloor: 0.03
+  hpSoftKneeFloor: 30
+  hpTailGrowthPerFloor: 0.01
+  combatFastStepFloors: 5
+  combatSoftKneeBonus: 5
+  combatTailStepFloors: 20
+  defenseFastStepFloors: 8
+  defenseSoftKneeBonus: 3
+  defenseTailStepFloors: 30
   chaserPrefab: {fileID: 7448081891523181985, guid: 839407238f181c84b874d98b33196af7,
     type: 3}
   shooterPrefab: {fileID: 174283713666926076, guid: b66344661d32f86479619529dcd073ea,

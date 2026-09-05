@@ -107,6 +107,9 @@ public class EnemyChaserAttack : MonoBehaviour
 
 
     private Rigidbody2D rb;
+    // Knockback yields AI control for a moment; see EnemyKnockbackReceiver.
+    private EnemyKnockbackReceiver knockbackReceiver;
+
 
     private Transform player;
 
@@ -143,6 +146,13 @@ public class EnemyChaserAttack : MonoBehaviour
     {
         rb =
             GetComponent<Rigidbody2D>();
+
+        if (knockbackReceiver == null)
+        {
+            knockbackReceiver =
+                GetComponent<EnemyKnockbackReceiver>();
+        }
+
 
 
         if (movement == null)
@@ -228,6 +238,14 @@ public class EnemyChaserAttack : MonoBehaviour
 
     private void FixedUpdate()
     {
+
+        // Knockback owns velocity while it lasts.
+        if (knockbackReceiver != null &&
+            knockbackReceiver.IsKnockbackActive)
+        {
+            return;
+        }
+
         if (state ==
             ChaserState.Dash)
         {

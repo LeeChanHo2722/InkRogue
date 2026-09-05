@@ -51,6 +51,9 @@ public class EnemySprinklerMovement : MonoBehaviour
     // ==================================================
 
     private Rigidbody2D rb;
+    // Knockback yields AI control for a moment; see EnemyKnockbackReceiver.
+    private EnemyKnockbackReceiver knockbackReceiver;
+
 
     private Transform player;
 
@@ -72,6 +75,13 @@ public class EnemySprinklerMovement : MonoBehaviour
     {
         rb =
             GetComponent<Rigidbody2D>();
+
+        if (knockbackReceiver == null)
+        {
+            knockbackReceiver =
+                GetComponent<EnemyKnockbackReceiver>();
+        }
+
 
 
         spawnVisual =
@@ -114,6 +124,14 @@ public class EnemySprinklerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
+
+        // Knockback owns velocity while it lasts.
+        if (knockbackReceiver != null &&
+            knockbackReceiver.IsKnockbackActive)
+        {
+            return;
+        }
+
         if (rb == null ||
             player == null)
         {

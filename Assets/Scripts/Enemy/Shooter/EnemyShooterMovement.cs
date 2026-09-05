@@ -25,6 +25,9 @@ public class EnemyShooterMovement : MonoBehaviour
 
 
     private Rigidbody2D rb;
+    // Knockback yields AI control for a moment; see EnemyKnockbackReceiver.
+    private EnemyKnockbackReceiver knockbackReceiver;
+
 
     private Transform player;
 
@@ -54,6 +57,13 @@ public class EnemyShooterMovement : MonoBehaviour
     {
         rb =
             GetComponent<Rigidbody2D>();
+
+        if (knockbackReceiver == null)
+        {
+            knockbackReceiver =
+                GetComponent<EnemyKnockbackReceiver>();
+        }
+
 
 
         avoidanceSide =
@@ -101,6 +111,14 @@ public class EnemyShooterMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
+
+        // Knockback owns velocity while it lasts.
+        if (knockbackReceiver != null &&
+            knockbackReceiver.IsKnockbackActive)
+        {
+            return;
+        }
+
         if (player == null)
         {
             rb.linearVelocity =
