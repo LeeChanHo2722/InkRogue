@@ -13,7 +13,9 @@ public enum WeaponType
     // Appended so existing serialized WeaponType values keep their index.
     MachineGun,
 
-    Breach
+    Breach,
+
+    Blade
 }
 
 
