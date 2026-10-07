@@ -141,6 +141,12 @@ public class ResultUI : MonoBehaviour
 
     public void PrepareResult()
     {
+        if (TowerRunUI.Instance != null)
+        {
+            resultPrepared = true;
+            TowerRunUI.Instance.ShowResult(true);
+            return;
+        }
         Debug.Log(
             "RESULT UI ¡æ PREPARE START"
         );
@@ -285,6 +291,7 @@ public class ResultUI : MonoBehaviour
 
     public IEnumerator PlayOpenAnimation()
     {
+        if (TowerRunUI.Instance != null) yield break;
         Debug.Log(
             "RESULT UI ¡æ OPEN ANIMATION START"
         );
@@ -606,13 +613,7 @@ public class ResultUI : MonoBehaviour
             1f;
 
 
-        Scene currentScene =
-            SceneManager.GetActiveScene();
-
-
-        SceneManager.LoadScene(
-            currentScene.buildIndex
-        );
+        RunRestart.Restart();
     }
 
 

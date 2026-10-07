@@ -16,6 +16,6 @@ MonoBehaviour:
   displayName: Blade
   weaponType: 9
   family: 2
-  icon: {fileID: 21300000, guid: f2ffcff4b8377b04db811473a6afb8bb, type: 3}
+  icon: {fileID: 21300000, guid: a52a6468000fbee4e82631890842f837, type: 3}
   baseDamage: 1
   baseInkCost: 1

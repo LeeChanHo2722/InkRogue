@@ -169,7 +169,9 @@ public partial class FloorManager
     // Third progression axis. Pure function of the Floor, so it needs no
     // reset and every spawn path reads the same value.
     public float CurrentEnemyHealthMultiplier =>
-        EncounterFloorScaling.HealthMultiplier(
+        runManager != null && runManager.CurrentMode == RunMode.Endless
+        ? TowerEnemyScaling.Health(CurrentFloor)
+        : EncounterFloorScaling.HealthMultiplier(
             CurrentFloor,
             hpGrowthPerFloor,
             hpSoftKneeFloor,
@@ -419,8 +421,8 @@ public partial class FloorManager
             return false;
         }
 
-        FloorEncounterMode encounterMode =
-            floorDefinition.EncounterMode;
+        FloorEncounterMode encounterMode = CurrentFloor > 1 && runManager?.SelectedCandidate != null
+            ? runManager.SelectedCandidate.EncounterMode : floorDefinition.EncounterMode;
 
         if (encounterMode != FloorEncounterMode.Defense)
         {
@@ -1498,7 +1500,32 @@ public partial class FloorManager
     }
 
 
-    private EncounterDifficultyDefinition
+    // Uses the same seed and scaling as the live encounter; preview consumes no shared RNG.
+    public string DescribeRoute(FloorCandidate candidate, int floor)
+    {
+        var difficulty = GetEncounterDifficulty(candidate.Difficulty);
+        if (difficulty == null) return "난이도 데이터 없음";
+        int combatBonus = EncounterFloorScaling.MaxAliveBonus(floor, combatFastStepFloors, combatSoftKneeBonus, combatTailStepFloors);
+        if (candidate.EncounterMode == FloorEncounterMode.Rush)
+        {
+            int cap = Mathf.Max(1, (difficulty.BaseMaxAlive + combatBonus) * rushMaxAlivePerBase + rushMaxAliveBonus);
+            return $"{rushEncounterDuration:0}초 생존 · 동시 출현 최대 {cap}";
+        }
+        float multiplier = EncounterFloorScaling.QuotaMultiplier(floor, quotaGrowthPerFloor, maxQuotaMultiplier);
+        int min = Mathf.RoundToInt(difficulty.MinTotalQuota * multiplier);
+        int max = Mathf.Max(min, Mathf.RoundToInt(difficulty.MaxTotalQuota * multiplier));
+        if (!EncounterPlanGenerator.TryGenerate(difficulty, candidate.EncounterSeed, false, min, max, out var plan, out _)) return "편성 정보를 확인할 수 없습니다";
+        int maxAlive = 1;
+        foreach (var wave in plan.waves) maxAlive = Mathf.Max(maxAlive, wave.maxAlive);
+        if (candidate.EncounterMode == FloorEncounterMode.Defense)
+        {
+            maxAlive += EncounterFloorScaling.MaxAliveBonus(floor, defenseFastStepFloors, defenseSoftKneeBonus, defenseTailStepFloors);
+            return $"{plan.waves.Length}회 공세 · 동시 출현 최대 {maxAlive}";
+        }
+        return $"총 {plan.totalQuota}체 · 동시 출현 최대 {maxAlive + combatBonus}";
+    }
+
+    public EncounterDifficultyDefinition
         GetEncounterDifficulty(
             FloorDifficulty difficulty)
     {

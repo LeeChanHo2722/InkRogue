@@ -4,6 +4,7 @@ public class EnemyProjectile : MonoBehaviour
 {
     public float speed = 6f;
     public int damage = 1;
+
     public float lifeTime = 4f;
 
 
@@ -32,6 +33,9 @@ public class EnemyProjectile : MonoBehaviour
 
     private void Start()
     {
+        var run = FindAnyObjectByType<RunManager>();
+        if (run != null && run.CurrentMode == RunMode.Endless)
+            damage = Mathf.Max(1,Mathf.RoundToInt(damage * TowerEnemyScaling.Damage(run.CurrentFloor)));
         previousPosition =
             transform.position;
 

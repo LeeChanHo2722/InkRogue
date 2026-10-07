@@ -735,6 +735,8 @@ public partial class FloorManager : MonoBehaviour
         }
 
 
+        TowerEnemyScaling.Apply(enemy, runManager);
+
         EnemyWaveMember member =
             enemy.GetComponent<
                 EnemyWaveMember
@@ -955,8 +957,8 @@ public partial class FloorManager : MonoBehaviour
             return selectedFloor;
 
 
-        int index =
-            CurrentFloor - 1;
+        int index = floorDefinitions != null && floorDefinitions.Length > 0
+            ? (CurrentFloor - 1) % floorDefinitions.Length : -1;
 
 
         if (floorDefinitions == null ||
@@ -1036,7 +1038,7 @@ public partial class FloorManager : MonoBehaviour
         // ¡æ Boss Arena
         // ==========================================
 
-        if (runManager.IsLastFloor)
+        if (runManager.IsBossFloor)
         {
             Debug.Log(
                 "FLOOR "

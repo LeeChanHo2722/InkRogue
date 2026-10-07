@@ -30,6 +30,7 @@ public class SlowMotionController : MonoBehaviour
     public void SetTimeScale(
         float timeScale)
     {
+        PlayerWeaponInputController.CancelActiveWeaponWheel();
         if (restoreRoutine != null)
         {
             StopCoroutine(
@@ -65,6 +66,7 @@ public class SlowMotionController : MonoBehaviour
 
     public void RestoreImmediate()
     {
+        PlayerWeaponInputController.CancelActiveWeaponWheel();
         if (restoreRoutine != null)
         {
             StopCoroutine(
@@ -92,6 +94,7 @@ public class SlowMotionController : MonoBehaviour
     public IEnumerator RestoreSmooth(
         float duration)
     {
+        PlayerWeaponInputController.CancelActiveWeaponWheel();
         if (restoreRoutine != null)
         {
             StopCoroutine(
@@ -148,6 +151,7 @@ public class SlowMotionController : MonoBehaviour
                 );
 
 
+            PlayerWeaponInputController.CancelActiveWeaponWheel();
             Time.timeScale =
                 scale;
 
@@ -171,8 +175,8 @@ public class SlowMotionController : MonoBehaviour
 
     private void OnDestroy()
     {
-        Time.timeScale =
-            1f;
+        PlayerWeaponInputController.CancelActiveWeaponWheel();
+        if (Time.timeScale > 0f) Time.timeScale = 1f;
 
 
         Time.fixedDeltaTime =

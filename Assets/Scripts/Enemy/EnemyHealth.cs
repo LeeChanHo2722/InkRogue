@@ -151,6 +151,8 @@ public class EnemyHealth : MonoBehaviour
         }
 
 
+        damage = TowerPowers.Instance != null ? TowerPowers.Instance.ModifyHit(transform.position, damage) : damage;
+        float appliedPowerDamage = Mathf.Min(currentHealth, damage);
         currentHealth -=
             damage;
 
@@ -160,6 +162,8 @@ public class EnemyHealth : MonoBehaviour
                 0f,
                 currentHealth
             );
+
+        TowerPowers.Instance?.Hit(gameObject, appliedPowerDamage, currentHealth <= 0f);
 
 
         // ==========================================

@@ -109,6 +109,13 @@ public class BossHealth : MonoBehaviour
     // Awake
     // ==================================================
 
+    public void ConfigureMaxHealth(int value)
+    {
+        maxHealth = Mathf.Max(1, value);
+        currentHealth = maxHealth;
+        HealthChanged?.Invoke(CurrentHealth, maxHealth);
+    }
+
     private void Awake()
     {
         currentHealth =
@@ -152,6 +159,8 @@ public class BossHealth : MonoBehaviour
         }
 
 
+        damage = TowerPowers.Instance != null ? TowerPowers.Instance.ModifyHit(transform.position, damage) : damage;
+        float appliedPowerDamage = Mathf.Min(currentHealth, damage);
         currentHealth -=
             damage;
 
@@ -161,6 +170,8 @@ public class BossHealth : MonoBehaviour
                 0f,
                 currentHealth
             );
+
+        TowerPowers.Instance?.Hit(gameObject, appliedPowerDamage, currentHealth <= 0f);
 
 
         BossHit?.Invoke();

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BossAttackController : MonoBehaviour
+public partial class BossAttackController : MonoBehaviour
 {
     // ==================================================
     // References
@@ -127,6 +127,8 @@ public class BossAttackController : MonoBehaviour
     private LineRenderer aimLine;
 
 
+    public TowerBossPattern towerPattern = TowerBossPattern.Core;
+    public int extraBombs;
     private bool combatActive = false;
 
     private Coroutine combatRoutine;
@@ -222,6 +224,7 @@ public class BossAttackController : MonoBehaviour
 
 
         StopAllCoroutines();
+        ClearTowerWarnings();
 
 
         HideAimLine();
@@ -234,39 +237,10 @@ public class BossAttackController : MonoBehaviour
 
     private IEnumerator CombatRoutine()
     {
-        bool nextBomb =
-            true;
-
-
-        while (combatActive &&
-               bossHealth != null &&
-               !bossHealth.IsDead)
+        int attackIndex = 0;
+        while (combatActive && bossHealth != null && !bossHealth.IsDead)
         {
-            int phase =
-                bossHealth.CurrentPhase;
-
-
-            if (nextBomb)
-            {
-                yield return StartCoroutine(
-                    BombAttackRoutine(
-                        phase
-                    )
-                );
-            }
-            else
-            {
-                yield return StartCoroutine(
-                    ShootAttackRoutine(
-                        phase
-                    )
-                );
-            }
-
-
-            nextBomb =
-                !nextBomb;
-
+            yield return TowerPattern(bossHealth.CurrentPhase, attackIndex++);
 
             float gap =
                 GetAttackGap(
@@ -299,9 +273,7 @@ public class BossAttackController : MonoBehaviour
         int phase)
     {
         int bombCount =
-            GetBombCount(
-                phase
-            );
+            GetBombCount(phase) + extraBombs;
 
 
         List<Vector2> targets =
@@ -1075,6 +1047,8 @@ public class BossAttackController : MonoBehaviour
         StopCombat();
     }
 
+
+    private void OnDisable() { StopCombat(); }
 
     private void OnDestroy()
     {

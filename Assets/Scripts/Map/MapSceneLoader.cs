@@ -37,8 +37,34 @@ public class MapSceneLoader : MonoBehaviour
     private BossSceneReferences currentBossReferences;
 
 
+    private RunMode requestedMode = RunMode.TwentyFloor;
+
+    public string CurrentMapName => currentMapScene.IsValid() ? currentMapScene.name : mapSceneName;
+    public System.Collections.Generic.IReadOnlyList<WeaponDefinition> SaveWeapons
+    {
+        get
+        {
+            var result = new List<WeaponDefinition>(developmentWeapons ?? System.Array.Empty<WeaponDefinition>());
+            var player = FindAnyObjectByType<PlayerWeaponController>();
+            if (player != null) { result.Add(player.LeftWeapon); result.Add(player.RightWeapon); }
+            return result;
+        }
+    }
+    public void ResumeRun(SavedRun saved)
+    {
+        mapSceneName = saved.mapScene;
+        LoadMapAndBeginFirstFloor();
+    }
+
     private void Start()
     {
+        TowerRunUI.Show(this);
+    }
+
+    public void BeginRun(RunMode mode)
+    {
+        if (mode != RunMode.TwentyFloor && mode != RunMode.Endless) return;
+        requestedMode = mode;
         LoadMapAndBeginFirstFloor();
     }
 
@@ -219,7 +245,7 @@ public class MapSceneLoader : MonoBehaviour
         AppendDevelopmentWeapons(roster);
 
         runManager.InitializeRun(
-            RunMode.TwentyFloor,
+            requestedMode,
             roster
         );
 

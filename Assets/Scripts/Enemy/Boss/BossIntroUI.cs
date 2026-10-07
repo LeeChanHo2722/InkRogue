@@ -68,6 +68,19 @@ public class BossIntroUI : MonoBehaviour
         originalScale =
             rectTransform.localScale;
 
+        // The title also contains the counterplay hint; give both text blocks their own area.
+        if (warningText != null)
+        {
+            warningText.alignment = TextAlignmentOptions.Center;
+            warningText.rectTransform.anchoredPosition = new Vector2(0, 100);
+            warningText.rectTransform.sizeDelta = new Vector2(760, 50);
+        }
+        if (bossTitleText != null)
+        {
+            bossTitleText.rectTransform.anchoredPosition = new Vector2(0, -28);
+            bossTitleText.rectTransform.sizeDelta = new Vector2(760, 180);
+        }
+
 
         HideImmediate();
     }

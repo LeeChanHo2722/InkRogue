@@ -89,7 +89,7 @@ public sealed class EliminationSpawnDirector : IEncounterSpawnSource
     {
         if (currentWave == null
             || spawnReserved
-            || aliveCount >= currentWave.maxAlive
+            || aliveCount >= MaxAlive
             || spawnCursor >= currentWave.spawnBag.Length)
         {
             enemyType = default;
