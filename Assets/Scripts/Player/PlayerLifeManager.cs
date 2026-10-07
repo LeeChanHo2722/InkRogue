@@ -74,9 +74,7 @@ public class PlayerLifeManager : MonoBehaviour
                 >();
         }
 
-        currentLives = maxLives;
-
-        UpdateLifeHUD();
+        ResetForNewRun();
 
         SetHUDVisible(false);
     }
@@ -127,6 +125,12 @@ public class PlayerLifeManager : MonoBehaviour
     private IEnumerator ResolveDeathRoutine()
     {
         isResolvingDeath = true;
+        bool consumesLife = !IsDefenseFloorPlayerDeath();
+        int lostLifeIndex = currentLives - 1;
+        if (consumesLife) currentLives = Mathf.Max(0, currentLives - 1);
+        RunPersistence.Instance?.RecordDeath(currentLives);
+        while (RunPersistence.Instance != null && RunPersistence.Instance.Pending) yield return null;
+
 
         // ==========================================
         // 사망 판정 즉시 Player 조작 차단
@@ -193,12 +197,11 @@ public class PlayerLifeManager : MonoBehaviour
 
         // Defense spends a life on the DefenseTarget, not on the Player.
         // Dying there still costs the full death presentation and time.
-        if (!IsDefenseFloorPlayerDeath())
+        if (consumesLife)
         {
-            int lostLifeIndex =
-                currentLives - 1;
 
             if (lostLifeIndex >= 0 &&
+                lifeImages != null &&
                 lostLifeIndex < lifeImages.Length &&
                 lifeImages[lostLifeIndex] != null)
             {
@@ -208,12 +211,6 @@ public class PlayerLifeManager : MonoBehaviour
                     )
                 );
             }
-
-            currentLives =
-                Mathf.Max(
-                    0,
-                    currentLives - 1
-                );
 
             UpdateLifeHUD();
 
@@ -533,6 +530,7 @@ public class PlayerLifeManager : MonoBehaviour
             currentLives - 1
         );
 
+        RunPersistence.Instance?.RecordDeath(currentLives);
         UpdateLifeHUD();
 
         if (currentLives <= 0)
@@ -548,11 +546,31 @@ public class PlayerLifeManager : MonoBehaviour
         return true;
     }
 
+    public void RestoreSavedLives(int lives)
+    {
+        currentLives = Mathf.Clamp(lives, 0, maxLives);
+        ResetForNewFloor();
+    }
+
+    public void ResetForNewRun()
+    {
+        maxLives = Mathf.Clamp(maxLives, 1, 3);
+        currentLives = maxLives;
+        ResetForNewFloor();
+    }
+
+    public void RestoreBossLife()
+    {
+        // A completed run cannot be revived by a late boss-death callback.
+        if (currentLives <= 0) return;
+        currentLives = Mathf.Min(maxLives, currentLives + 1);
+        UpdateLifeHUD();
+    }
+
     public void ResetForNewFloor()
     {
+        // This component belongs to BootstrapScene and survives additive map changes.
         StopAllCoroutines();
-
-        currentLives = maxLives;
         isResolvingDeath = false;
 
         UpdateLifeHUD();

@@ -61,6 +61,56 @@ public class PlayerWeaponInputController
         weaponWheelOrigin;
 
     private bool isWeaponWheelOpen;
+    private const float WeaponWheelTimeScale = 0.1f;
+    private static PlayerWeaponInputController wheelTimeOwner;
+    private bool ownsWheelTime;
+    private bool applicationFocused = true, applicationPaused;
+    private float previousTimeScale, previousFixedDeltaTime;
+    private float appliedTimeScale, appliedFixedDeltaTime;
+
+    public static void CancelActiveWeaponWheel()
+    {
+        if (wheelTimeOwner != null) wheelTimeOwner.ResetWeaponWheelState();
+    }
+
+    private void AcquireWheelTime()
+    {
+        CancelActiveWeaponWheel();
+        previousTimeScale = Time.timeScale;
+        previousFixedDeltaTime = Time.fixedDeltaTime;
+        appliedTimeScale = Mathf.Min(previousTimeScale, WeaponWheelTimeScale);
+        appliedFixedDeltaTime = previousFixedDeltaTime * appliedTimeScale / previousTimeScale;
+        wheelTimeOwner = this;
+        ownsWheelTime = true;
+        Time.timeScale = appliedTimeScale;
+        Time.fixedDeltaTime = appliedFixedDeltaTime;
+        // Unity quantizes the fixed step internally; compare its stored value.
+        appliedTimeScale = Time.timeScale;
+        appliedFixedDeltaTime = Time.fixedDeltaTime;
+    }
+
+    private void ReleaseWheelTime()
+    {
+        if (!ownsWheelTime) return;
+        ownsWheelTime = false;
+        if (wheelTimeOwner == this) wheelTimeOwner = null;
+        // An external pause/transition may already have replaced either value.
+        // Only restore values still owned by this wheel; never unpause another UI.
+        if (Mathf.Approximately(Time.timeScale, appliedTimeScale)) Time.timeScale = previousTimeScale;
+        if (Mathf.Approximately(Time.fixedDeltaTime, appliedFixedDeltaTime)) Time.fixedDeltaTime = previousFixedDeltaTime;
+    }
+
+    private void OnApplicationFocus(bool focused)
+    {
+        applicationFocused = focused;
+        if (!focused) { ResetWeaponWheelState(); CancelAllSlots(); }
+    }
+
+    private void OnApplicationPause(bool paused)
+    {
+        applicationPaused = paused;
+        if (paused) { ResetWeaponWheelState(); CancelAllSlots(); }
+    }
 
     private WeaponSlotSide activeWeaponWheelSide;
 
@@ -189,12 +239,17 @@ public class PlayerWeaponInputController
 
     private void Update()
     {
+        if (isWeaponWheelOpen && (!applicationFocused || applicationPaused ||
+            !Mathf.Approximately(Time.timeScale, appliedTimeScale) ||
+            !Mathf.Approximately(Time.fixedDeltaTime, appliedFixedDeltaTime)))
+            ResetWeaponWheelState();
         // ==========================================
         // External Input Lock
         // ==========================================
 
         if (!inputEnabled)
         {
+            ResetWeaponWheelState();
             CancelAllSlots();
 
             return;
@@ -207,6 +262,7 @@ public class PlayerWeaponInputController
 
         if (Mouse.current == null)
         {
+            ResetWeaponWheelState();
             CancelAllSlots();
 
             return;
@@ -219,6 +275,7 @@ public class PlayerWeaponInputController
 
         if (Time.timeScale <= 0f)
         {
+            ResetWeaponWheelState();
             CancelAllSlots();
 
             return;
@@ -231,6 +288,7 @@ public class PlayerWeaponInputController
 
         if (weaponController == null)
         {
+            ResetWeaponWheelState();
             CancelAllSlots();
 
             return;
@@ -338,15 +396,16 @@ public class PlayerWeaponInputController
         WeaponSlotSide side
     )
     {
-        if (!inputEnabled ||
+        if (!isActiveAndEnabled || !inputEnabled || !applicationFocused || applicationPaused ||
             Time.timeScale <= 0f ||
             weaponController == null ||
-            Mouse.current == null ||
-            isWeaponWheelOpen)
+            Mouse.current == null)
         {
             return;
         }
 
+        // The most recently pressed hand takes over without stacking slow effects.
+        if (!isWeaponWheelOpen) AcquireWheelTime();
         activeWeaponWheelSide = side;
         isWeaponWheelOpen = true;
         highlightedWeaponSlotIndex = -1;
@@ -367,6 +426,12 @@ public class PlayerWeaponInputController
             return;
         }
 
+        if (!inputEnabled || !applicationFocused || applicationPaused || Time.timeScale <= 0f)
+        {
+            ResetWeaponWheelState();
+            return;
+        }
+
         if (highlightedWeaponSlotIndex >= 0)
         {
             TrySelectWeapon(
@@ -375,6 +440,13 @@ public class PlayerWeaponInputController
             );
         }
 
+        WeaponSlotSide other = side == WeaponSlotSide.Right ? WeaponSlotSide.Left : WeaponSlotSide.Right;
+        InputAction otherAction = other == WeaponSlotSide.Right ? rightWeaponWheelAction?.action : leftWeaponWheelAction?.action;
+        if (inputEnabled && Time.timeScale > 0f && otherAction != null && otherAction.IsPressed())
+        {
+            TryBeginWeaponWheel(other);
+            return;
+        }
         ResetWeaponWheelState();
     }
 
@@ -437,6 +509,7 @@ public class PlayerWeaponInputController
 
     private void ResetWeaponWheelState()
     {
+        ReleaseWheelTime();
         isWeaponWheelOpen = false;
         activeWeaponWheelSide = default;
         highlightedWeaponSlotIndex = -1;
@@ -507,6 +580,9 @@ public class PlayerWeaponInputController
         // Press
         // ==========================================
 
+        TowerPowers.Instance?.BeginAttack(side);
+        try
+        {
         if (pressed)
         {
             activeBehaviour
@@ -540,6 +616,8 @@ public class PlayerWeaponInputController
                     context
                 );
         }
+        }
+        finally { TowerPowers.Instance?.EndAttack(); }
     }
 
 

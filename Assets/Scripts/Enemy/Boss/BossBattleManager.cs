@@ -246,8 +246,21 @@ public class BossBattleManager : MonoBehaviour
     // Intro + Spawn
     // ==================================================
 
+    private TowerBossDefinition currentDefinition;
+    private RunManager towerRun;
+
     public IEnumerator StartBossBattleRoutine()
     {
+        bossDeathRunning = false;
+        towerRun = FindAnyObjectByType<RunManager>();
+        currentDefinition = TowerBossDefinition.For(towerRun);
+        if (TowerRunUI.Instance != null)
+        {
+            var font = TowerRunUI.Instance.DisplayFont;
+            if (bossIntroUI != null && bossIntroUI.bossTitleText != null) bossIntroUI.bossTitleText.font = font;
+            if (bossHealthUI != null && bossHealthUI.bossNameText != null) bossHealthUI.bossNameText.font = font;
+        }
+        if (bossHealthUI != null) bossHealthUI.bossName = currentDefinition.displayName;
         if (!bossReferencesBound)
         {
             Debug.LogError(
@@ -275,7 +288,7 @@ public class BossBattleManager : MonoBehaviour
         {
             yield return StartCoroutine(
                 bossIntroUI.PlayIntro(
-                    "INK CORE"
+                    currentDefinition.displayName + "\n<size=45%>" + currentDefinition.Counterplay + "</size>"
                 )
             );
         }
@@ -533,6 +546,7 @@ public class BossBattleManager : MonoBehaviour
         }
 
 
+        currentDefinition.Configure(currentBossObject, towerRun);
         currentBossHealth.BossDied +=
             OnBossDied;
 
@@ -690,9 +704,11 @@ public class BossBattleManager : MonoBehaviour
                 );
 
 
-            spawnedAdds.Add(
-                enemy
-            );
+            if (towerRun != null && enemy.TryGetComponent<EnemyHealth>(out var addHealth))
+                addHealth.ApplyFloorHealthMultiplier(towerRun.CurrentMode == RunMode.Endless
+                    ? TowerEnemyScaling.Health(towerRun.CurrentFloor) : 1f + towerRun.CurrentFloor * 0.03f);
+            TowerEnemyScaling.Apply(enemy, towerRun);
+            spawnedAdds.Add(enemy);
         }
     }
 
@@ -1025,10 +1041,23 @@ public class BossBattleManager : MonoBehaviour
         // 아직 Wipe가 화면을 가리고 있음
         // ==========================================
 
+        if (towerRun != null)
+        {
+            towerRun.RecordBossDefeated();
+            if (!towerRun.IsLastFloor)
+            {
+                bossDeathRoutine = null;
+                bossDeathRunning = false;
+                var transition = FindAnyObjectByType<BossArenaTransitionManager>();
+                if (transition != null) transition.ReturnToNormalArena();
+                var floorTransition = FindAnyObjectByType<FloorTransitionManager>();
+                if (floorTransition != null) floorTransition.BeginFloorClearTransition();
+                yield break;
+            }
+        }
         if (resultUI != null)
         {
-            resultUI
-                .PrepareResult();
+            resultUI.PrepareResult();
         }
         else
         {

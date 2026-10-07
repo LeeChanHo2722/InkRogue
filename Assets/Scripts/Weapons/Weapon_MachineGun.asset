@@ -16,6 +16,6 @@ MonoBehaviour:
   displayName: Machine Gun
   weaponType: 7
   family: 1
-  icon: {fileID: 21300000, guid: 88db0450b629a98489f4e846ff142edb, type: 3}
+  icon: {fileID: 21300000, guid: 228f8cbdaea2471498998ec3c8b8b12a, type: 3}
   baseDamage: 1
   baseInkCost: 1

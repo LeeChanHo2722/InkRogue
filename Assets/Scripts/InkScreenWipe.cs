@@ -329,7 +329,9 @@ public class InkScreenWipe : MonoBehaviour
         // 실제 한 프레임 렌더링
         // ==========================================
 
-        yield return new WaitForEndOfFrame();
+        // End-of-frame callbacks are not emitted by the batch-mode player loop.
+        if (Application.isBatchMode) yield return null;
+        else yield return new WaitForEndOfFrame();
 
 
         float timer =

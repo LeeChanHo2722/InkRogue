@@ -34,6 +34,9 @@ public class BossHealthUI : MonoBehaviour
     // ==================================================
 
     private BossHealth bossHealth;
+    public bool IsVisible => canvasGroup != null && canvasGroup.alpha > .01f && gameObject.activeInHierarchy;
+    private RectTransform hudRect, lifeRect, canvasRect;
+    private Vector2 authoredPosition;
 
 
     // ==================================================
@@ -42,6 +45,12 @@ public class BossHealthUI : MonoBehaviour
 
     private void Awake()
     {
+        hudRect = GetComponent<RectTransform>();
+        authoredPosition = hudRect.anchoredPosition;
+        var canvas = GetComponentInParent<Canvas>();
+        canvasRect = canvas != null ? canvas.transform as RectTransform : null;
+        var lives = FindAnyObjectByType<PlayerLifeManager>(FindObjectsInactive.Include);
+        lifeRect = lives != null ? lives.GetComponent<RectTransform>() : null;
         if (canvasGroup == null)
         {
             canvasGroup =
@@ -50,6 +59,23 @@ public class BossHealthUI : MonoBehaviour
 
 
         HideImmediate();
+    }
+
+    private void OnEnable() { Canvas.willRenderCanvases += AvoidLifeHUD; }
+    private void OnDisable() { Canvas.willRenderCanvases -= AvoidLifeHUD; }
+    private void AvoidLifeHUD()
+    {
+        if (!IsVisible || hudRect == null || lifeRect == null || canvasRect == null || healthFill == null) return;
+        Bounds life = RectTransformUtility.CalculateRelativeRectTransformBounds(canvasRect, lifeRect);
+        Bounds bar = RectTransformUtility.CalculateRelativeRectTransformBounds(canvasRect, healthFill.transform.parent);
+        Vector2 offset = hudRect.anchoredPosition - authoredPosition;
+        float left = bar.min.x - offset.x, right = bar.max.x - offset.x;
+        bool sameRow = bar.max.y - offset.y > life.min.y && bar.min.y - offset.y < life.max.y;
+        float shift = sameRow ? Mathf.Max(0, life.max.x + 12f - left) : 0;
+        Vector2 next = authoredPosition;
+        if (right + shift <= canvasRect.rect.xMax - 16f) next.x += shift;
+        else next.y -= life.size.y + 16f;
+        if (hudRect.anchoredPosition != next) hudRect.anchoredPosition = next;
     }
 
 

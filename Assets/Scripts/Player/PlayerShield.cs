@@ -175,6 +175,8 @@ public class PlayerShield : MonoBehaviour, IEncounterDamageTarget
             return;
         }
 
+        if (TowerPowers.Instance != null && TowerPowers.Instance.AbsorbHit()) return;
+
         lastHitTime =
             Time.time;
 
@@ -363,6 +365,14 @@ public class PlayerShield : MonoBehaviour, IEncounterDamageTarget
         UpdateUI();
     }
 
+    public void RestoreCheckpointHealth(float value)
+    {
+        ResetAfterRespawn(0f);
+        currentShield = Mathf.Clamp(value, 0f, maxShield);
+        NotifyShieldChanged();
+        UpdateUI();
+    }
+
     public void ResetForNewFloor()
     {
         bool wasEmergency =
@@ -440,6 +450,12 @@ public class PlayerShield : MonoBehaviour, IEncounterDamageTarget
     {
         if (isGameOver)
             return;
+        if (TowerRunUI.Instance != null)
+        {
+            isGameOver = true;
+            TowerRunUI.Instance.ShowResult(false);
+            return;
+        }
 
         isGameOver =
             true;
@@ -460,11 +476,7 @@ public class PlayerShield : MonoBehaviour, IEncounterDamageTarget
         Time.timeScale =
             1f;
 
-        SceneManager.LoadScene(
-            SceneManager
-                .GetActiveScene()
-                .buildIndex
-        );
+        RunRestart.Restart();
     }
 
     private void UpdateUI()

@@ -83,6 +83,7 @@ public class PlayerInkResource : MonoBehaviour
                 maxInk
             );
 
+        TowerPowers.Instance?.InkSpent(amount);
         return true;
     }
 
@@ -113,6 +114,7 @@ public class PlayerInkResource : MonoBehaviour
                 maxInk
             );
 
+        TowerPowers.Instance?.InkSpent(actualSpent);
         return actualSpent;
     }
 

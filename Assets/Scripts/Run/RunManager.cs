@@ -8,13 +8,13 @@ public enum RunMode
     Endless
 }
 
-public class RunManager : MonoBehaviour
+public partial class RunManager : MonoBehaviour
 {
     public const int FloorLoadoutSlotsPerHand = 3;
     public const int FloorCandidateCount = 3;
 
     [Min(1)]
-    public int maxFloor = 3;
+    public int maxFloor = 20;
 
     [SerializeField]
     private int currentFloor = 1;
@@ -25,18 +25,15 @@ public class RunManager : MonoBehaviour
     private readonly List<WeaponDefinition> runInventory =
         new List<WeaponDefinition>();
 
-    private static readonly FloorDifficulty[] CandidateDifficulties =
-    {
-        FloorDifficulty.Easy,
-        FloorDifficulty.Normal,
-        FloorDifficulty.Hard
-    };
-
     private readonly List<FloorCandidate> floorCandidates =
         new List<FloorCandidate>(FloorCandidateCount);
 
     private FloorCandidate selectedCandidate;
 
+    public int RunSeed { get; private set; }
+    public int CurrentPowerOfferCount => currentFloor == 1 ? 3 : selectedCandidate?.PowerOfferCount ?? 3;
+    private readonly Queue<FloorCandidate> recentRoutes = new();
+    private int preparedForFloor = -1;
     private int firstFloorEncounterSeed;
 
     private bool hasFirstFloorEncounterSeed;
@@ -78,17 +75,64 @@ public class RunManager : MonoBehaviour
         rightFloorLoadout;
 
     public bool IsLastFloor =>
-        currentFloor >= maxFloor;
+        currentMode == RunMode.TwentyFloor && currentFloor >= maxFloor;
+
+    public bool IsBossFloor => IsBossFloorFor(currentMode, currentFloor);
+
+    public static bool IsBossFloorFor(RunMode mode, int floor) =>
+        floor > 0 && (mode == RunMode.TwentyFloor
+            ? floor % 5 == 0
+            : mode == RunMode.Endless && floor % 10 == 0);
+
+    public float ElapsedSeconds { get; private set; }
+    public int BossesDefeated { get; private set; }
+    public int RewardedFloors { get; private set; }
+    // Floor rewards grant a power choice; damage belongs to the selected owner.
+    private int lastRewardedFloor;
+    private int lastDefeatedBossFloor;
+
+    public void GrantFloorReward()
+    {
+        if (lastRewardedFloor == currentFloor) return;
+        lastRewardedFloor = currentFloor;
+        RewardedFloors++;
+    }
+
+    public void RecordBossDefeated()
+    {
+        if (!IsInitialized || !IsBossFloor || lastDefeatedBossFloor == currentFloor) return;
+        lastDefeatedBossFloor = currentFloor;
+        BossesDefeated++;
+        FindAnyObjectByType<PlayerLifeManager>()?.RestoreBossLife();
+    }
+
+    private void Update()
+    {
+        if (IsInitialized)
+            ElapsedSeconds += Time.deltaTime;
+    }
 
     public void InitializeRun(
         RunMode mode,
-        IEnumerable<WeaponDefinition> startingWeapons)
+        IEnumerable<WeaponDefinition> startingWeapons, int? seed = null)
     {
+        if (startingWeapons == null)
+            throw new System.ArgumentNullException(nameof(startingWeapons));
+
+        currentFloor = 1;
+        ElapsedSeconds = 0f;
+        BossesDefeated = 0;
+        RewardedFloors = 0;
+        lastRewardedFloor = 0;
+        lastDefeatedBossFloor = 0;
+        maxFloor = 20;
         runInventory.Clear();
         ClearFloorLoadouts();
         ClearFloorSelection();
         currentMode = mode;
-        firstFloorEncounterSeed = CreateEncounterSeed();
+        RunSeed = seed ?? CreateEncounterSeed();
+        recentRoutes.Clear(); preparedForFloor = -1;
+        firstFloorEncounterSeed = new System.Random(RunSeed).Next(1, int.MaxValue);
         hasFirstFloorEncounterSeed = true;
 
         if (startingWeapons == null)
@@ -107,48 +151,32 @@ public class RunManager : MonoBehaviour
     public bool TryPrepareFloorCandidates(
         IReadOnlyList<FloorDefinition> source)
     {
+        // Reopening/cancelling cannot reroll the route or its encounter seed.
+        if (preparedForFloor == currentFloor && floorCandidates.Count == FloorCandidateCount)
+            return true;
+        var pool = new List<FloorDefinition>();
+        if (source != null)
+            foreach (var floor in source)
+                if (floor != null && IsMapAvailable(floor.Map) && !pool.Contains(floor)) pool.Add(floor);
+        if (pool.Count == 0) return false;
+
+        var generated = FloorRouteGenerator.Generate(pool, recentRoutes, RunSeed, currentFloor);
         ClearFloorSelection();
-
-        if (source == null)
-            return false;
-
-        List<FloorDefinition> uniqueCandidates =
-            new List<FloorDefinition>();
-
-        for (int i = 0; i < source.Count; i++)
-        {
-            FloorDefinition candidate = source[i];
-
-            if (candidate != null &&
-                !uniqueCandidates.Contains(candidate))
-            {
-                uniqueCandidates.Add(candidate);
-            }
-        }
-
-        if (uniqueCandidates.Count < FloorCandidateCount)
-            return false;
-
-        for (int i = 0; i < FloorCandidateCount; i++)
-        {
-            int swapIndex =
-                Random.Range(i, uniqueCandidates.Count);
-
-            FloorDefinition candidate = uniqueCandidates[i];
-            uniqueCandidates[i] = uniqueCandidates[swapIndex];
-            uniqueCandidates[swapIndex] = candidate;
-
-            floorCandidates.Add(
-                new FloorCandidate(
-                    uniqueCandidates[i],
-                    CandidateDifficulties[
-                        Random.Range(
-                            0,
-                            CandidateDifficulties.Length)],
-                    CreateEncounterSeed()));
-        }
-
+        floorCandidates.AddRange(generated);
+        preparedForFloor = currentFloor;
         return true;
+    }
+
+    private static bool IsMapAvailable(MapDefinition map)
+    {
+        if (map == null || string.IsNullOrWhiteSpace(map.SceneName)) return false;
+        // CanStreamedLevelBeLoaded returns false in Edit mode; build-scene paths are stable in both.
+        for (int i=0;i<UnityEngine.SceneManagement.SceneManager.sceneCountInBuildSettings;i++)
+        {
+            string path=UnityEngine.SceneManagement.SceneUtility.GetScenePathByBuildIndex(i);
+            if (path==map.SceneName || System.IO.Path.GetFileNameWithoutExtension(path)==map.SceneName) return true;
+        }
+        return false;
     }
 
     public bool TrySelectFloorCandidate(
@@ -216,11 +244,8 @@ public class RunManager : MonoBehaviour
         if (!TryGetFloorLoadout(hand, out WeaponDefinition[] loadout))
             return false;
 
-        for (int i = 0; i < loadout.Length; i++)
-        {
-            if (i != slotIndex && loadout[i] == weapon)
-                return false;
-        }
+        if (WeaponLoadoutRules.ContainsInOtherSlot(loadout, slotIndex, weapon))
+            return false;
 
         loadout[slotIndex] = weapon;
         return true;
@@ -309,6 +334,11 @@ public class RunManager : MonoBehaviour
 
     public void AdvanceFloor()
     {
+        if (selectedCandidate != null)
+        {
+            recentRoutes.Enqueue(selectedCandidate);
+            while (recentRoutes.Count > 2) recentRoutes.Dequeue();
+        }
         currentFloor++;
     }
 }

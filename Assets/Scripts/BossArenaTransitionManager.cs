@@ -242,6 +242,13 @@ public class BossArenaTransitionManager : MonoBehaviour
     }
 
 
+    public void ReturnToNormalArena()
+    {
+        InitializeArenaState();
+        Time.timeScale = 1f;
+        if (GameAudioManager.Instance != null) GameAudioManager.Instance.PlayGameplayBGM();
+    }
+
     private void InitializeArenaState()
     {
         if (normalArenaRoot != null)

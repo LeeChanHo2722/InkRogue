@@ -400,14 +400,9 @@ public class PlayerWeaponController : MonoBehaviour
         WeaponSlotSide side
     )
     {
-        if (side ==
-            WeaponSlotSide.Right)
-        {
-            return rightDamageMultiplier;
-        }
-
-
-        return leftDamageMultiplier;
+        float reward = TowerPowers.Instance != null ? TowerPowers.Instance.PlayerDamageMultiplier : 1f;
+        return (side == WeaponSlotSide.Right
+            ? rightDamageMultiplier : leftDamageMultiplier) * reward;
     }
 
 

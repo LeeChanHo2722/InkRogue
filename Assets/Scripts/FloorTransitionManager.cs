@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-public class FloorTransitionManager : MonoBehaviour
+public partial class FloorTransitionManager : MonoBehaviour
 {
     // ==================================================
     // References
@@ -68,8 +68,8 @@ public class FloorTransitionManager : MonoBehaviour
 
 
     [Tooltip(
-        "Floor Clear°¡ ¹ß»ıÇÑ µÚ "
-        + "Slow »óÅÂ¸¦ º¸¿©ÁÖ´Â ½ÇÁ¦ ½Ã°£"
+        "Floor Clearê°€ ë°œìƒí•œ ë’¤ "
+        + "Slow ìƒíƒœë¥¼ ë³´ì—¬ì£¼ëŠ” ì‹¤ì œ ì‹œê°„"
     )]
     public float floorClearSlowLead =
         0.08f;
@@ -101,46 +101,46 @@ public class FloorTransitionManager : MonoBehaviour
     [Header("Timing")]
 
     [Tooltip(
-        "°ÔÀÓ ½ÃÀÛ ÆÄ¶õ È­¸é À¯Áö ½Ã°£"
+        "ê²Œì„ ì‹œì‘ íŒŒë€ í™”ë©´ ìœ ì§€ ì‹œê°„"
     )]
     public float gameStartHoldDuration =
         0.20f;
 
 
     [Tooltip(
-        "¸®½ºÆù ½Ã Á×Àº À§Ä¡¿¡¼­ Spawn Point±îÁö "
-        + "Ä«¸Ş¶ó°¡ ÀÌµ¿ÇÏ´Â ½Ã°£"
+        "ë¦¬ìŠ¤í° ì‹œ ì£½ì€ ìœ„ì¹˜ì—ì„œ Spawn Pointê¹Œì§€ "
+        + "ì¹´ë©”ë¼ê°€ ì´ë™í•˜ëŠ” ì‹œê°„"
     )]
     public float respawnCameraMoveDuration =
         0.45f;
 
 
     [Tooltip(
-        "Floor Clear ¹®±¸ À¯Áö ½Ã°£"
+        "Floor Clear ë¬¸êµ¬ ìœ ì§€ ì‹œê°„"
     )]
     public float floorClearHoldDuration =
         0.45f;
 
 
     [Tooltip(
-        "¸®½ºÆù ½Ã È­¸éÀÌ ¿ÏÀüÈ÷ °¡·ÁÁø »óÅÂ·Î "
-        + "À¯ÁöÇÏ´Â ½Ã°£"
+        "ë¦¬ìŠ¤í° ì‹œ í™”ë©´ì´ ì™„ì „íˆ ê°€ë ¤ì§„ ìƒíƒœë¡œ "
+        + "ìœ ì§€í•˜ëŠ” ì‹œê°„"
     )]
     public float respawnCoveredHoldDuration =
         0.15f;
 
 
     [Tooltip(
-        "Wipe°¡ ¿ÏÀüÈ÷ »ç¶óÁø ÈÄ "
-        + "Player µîÀå±îÁö ±â´Ù¸®´Â ½Ã°£"
+        "Wipeê°€ ì™„ì „íˆ ì‚¬ë¼ì§„ í›„ "
+        + "Player ë“±ì¥ê¹Œì§€ ê¸°ë‹¤ë¦¬ëŠ” ì‹œê°„"
     )]
     public float playerSpawnDelay =
         0.10f;
 
 
     [Tooltip(
-        "Player µîÀå ¿Ï·á ÈÄ "
-        + "Enemy Spawn±îÁö ±â´Ù¸®´Â ½Ã°£"
+        "Player ë“±ì¥ ì™„ë£Œ í›„ "
+        + "Enemy Spawnê¹Œì§€ ê¸°ë‹¤ë¦¬ëŠ” ì‹œê°„"
     )]
     public float enemySpawnDelay =
         0.20f;
@@ -263,6 +263,10 @@ public class FloorTransitionManager : MonoBehaviour
 
     public void BeginFirstFloor()
     {
+        if (RunPersistence.Instance?.ResumeStage != null && RunPersistence.Instance.ResumeStage != RunSaveStage.FloorStart)
+        {
+            StartCoroutine(RestoreSafeStage()); return;
+        }
         if (firstFloorStarted)
             return;
 
@@ -484,6 +488,11 @@ public class FloorTransitionManager : MonoBehaviour
         yield return StartCoroutine(
             PrepareFloorStartRoutine()
         );
+        if (RunPersistence.Instance != null)
+        {
+            RunPersistence.Instance.ApplyResumeHealth();
+            yield return RunPersistence.Instance.Boundary(RunSaveStage.FloorStart);
+        }
 
 
         if (screenWipe != null)
@@ -578,6 +587,11 @@ public class FloorTransitionManager : MonoBehaviour
 
     private IEnumerator FloorClearRoutine()
     {
+        if (TowerRunUI.Instance != null && floorManager != null)
+        {
+            floorManager.runManager.GrantFloorReward();
+            if (RunPersistence.Instance != null) yield return RunPersistence.Instance.Boundary(RunSaveStage.PowerChoice);
+        }
         transitionRunning =
             true;
 
@@ -655,6 +669,18 @@ public class FloorTransitionManager : MonoBehaviour
         }
 
 
+        if (TowerRunUI.Instance != null && floorManager != null)
+        {
+            floorManager.runManager.GrantFloorReward();
+            Time.timeScale = 0f;
+            waitingForUpgrade = true;
+            transitionRunning = false;
+            TowerRunUI.Instance.ShowPowerChoices(UpgradeSelected);
+            if (screenWipe != null)
+                yield return StartCoroutine(screenWipe.Reveal());
+            yield break;
+        }
+
         if (upgradeManager != null)
         {
             upgradeManager
@@ -722,6 +748,12 @@ public class FloorTransitionManager : MonoBehaviour
                 floorManager.FloorDefinitions
             );
 
+
+        if (!candidatesPrepared && runManager != null && floorSelectionUI != null)
+        {
+            floorSelectionUI.ShowUnavailable(UpgradeSelected);
+            return;
+        }
 
         if (candidatesPrepared &&
             floorSelectionUI != null &&
@@ -793,6 +825,7 @@ public class FloorTransitionManager : MonoBehaviour
 
     private IEnumerator NextFloorRoutine()
     {
+        if (RunPersistence.Instance != null) yield return RunPersistence.Instance.Boundary(RunSaveStage.Travel);
         transitionRunning =
             true;
 
@@ -923,6 +956,11 @@ public class FloorTransitionManager : MonoBehaviour
         yield return StartCoroutine(
             PrepareFloorStartRoutine()
         );
+        if (RunPersistence.Instance != null)
+        {
+            RunPersistence.Instance.ApplyResumeHealth();
+            yield return RunPersistence.Instance.Boundary(RunSaveStage.FloorStart);
+        }
 
 
         if (screenWipe != null)
@@ -1272,6 +1310,7 @@ public class FloorTransitionManager : MonoBehaviour
             true;
 
 
+        PlayerWeaponInputController.CancelActiveWeaponWheel();
         float previousTimeScale =
             Time.timeScale;
 
@@ -1549,8 +1588,8 @@ public class FloorTransitionManager : MonoBehaviour
         // ==========================================
         // Weapon Input
         //
-        // ÇöÀç »ç¿ë ÁßÀÎ Shooter / BombÀ»
-        // ¸ÕÀú Ãë¼ÒÇÏ°í ÀÌÈÄ ÀÔ·Â Â÷´Ü.
+        // í˜„ì¬ ì‚¬ìš© ì¤‘ì¸ Shooter / Bombì„
+        // ë¨¼ì € ì·¨ì†Œí•˜ê³  ì´í›„ ì…ë ¥ ì°¨ë‹¨.
         // ==========================================
 
         if (playerWeaponInputController != null)
